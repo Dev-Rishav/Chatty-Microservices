@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -23,20 +24,12 @@ public class JWTService {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    public String getSecret() {
-        return jwtSecret;
-    }
-    private String secretKey=getSecret();
+    private SecretKey secretKey;
 
-    public JWTService(){
-        try {
-            KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacSHA256");
-            SecretKey sk = keyGenerator.generateKey();
-            secretKey = Base64.getEncoder().encodeToString(sk.getEncoded());
-        }
-        catch (NoSuchAlgorithmException e){
-            throw new RuntimeException(e);
-        }
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateToken(String username) {
@@ -50,13 +43,8 @@ public class JWTService {
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 60 *60*1000*24))
                 .and()
-                .signWith(getKey())
+                .signWith(secretKey)
                 .compact();
-    }
-
-    private SecretKey getKey() {
-        byte[] keyBytes= Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String extractUsername(String token) {
@@ -71,7 +59,7 @@ public class JWTService {
     private Claims extractAllClaims(String token) {
         return Jwts
                 .parser()
-                .verifyWith(getKey())
+                .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

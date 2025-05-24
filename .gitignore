@@ -32,3 +32,4 @@ src/firebase/setup.js
 
 .env
 server/src/main/resources/application.properties
+server/AllServices/src/main/resources/application.properties
