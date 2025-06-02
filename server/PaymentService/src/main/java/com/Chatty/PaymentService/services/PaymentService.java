@@ -46,7 +46,7 @@ public class PaymentService {
     public String createRazorpayOrder(CreateOrderRequest request) {
         try {
             JSONObject options = new JSONObject();
-            options.put("amount", request.getAmount()*100);
+            options.put("amount", request.getAmount());
             options.put("currency", request.getCurrency());
             options.put("receipt", "txn_" + System.currentTimeMillis());
             options.put("payment_capture", 1);
