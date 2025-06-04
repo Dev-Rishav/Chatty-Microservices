@@ -29,14 +29,14 @@ public class JWTSecurity {
         secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String email,int userId) {
 
         Map<String,Object> claims=new HashMap<>();
+        claims.put("Email",email);
+        claims.put("userId",userId);
         return Jwts.builder()
-                .claims()
-                .add(claims)
-//                .setClaims(claims)
-                .subject(username)
+                .claims().add(claims)
+                .subject(email)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 60 *60*1000*24))
                 .and()

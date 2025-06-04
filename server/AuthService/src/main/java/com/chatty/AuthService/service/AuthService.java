@@ -74,7 +74,7 @@ public class AuthService {
                 );
         if(authentication.isAuthenticated()) {
 //            return jwtService.generateToken(user.getUsername());
-            String token= jwtSecurity.generateToken(user.getEmail());
+            String token= jwtSecurity.generateToken(user.getEmail(),user.getUser_id());
             Users authenticatedUser=repo.findByEmail(user.getEmail());
             System.out.println("token= "+token);
             UserDTO userDTO=new UserDTO();
