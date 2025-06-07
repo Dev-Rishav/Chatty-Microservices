@@ -6,6 +6,7 @@ import com.chatty.userservice.model.CachedUser;
 import com.chatty.userservice.repo.CachedUserRepo;
 import com.chatty.userservice.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,6 +39,17 @@ public class UserController {
                         user.getUsername().toLowerCase().contains(query.toLowerCase()))
                 .map(user -> new UserDTO( user.getUsername(), user.getEmail(),(int)user.getId()))
                 .collect(Collectors.toList());
+    }
+
+    @GetMapping("/ping")
+    @ResponseBody
+    public String ping() {
+        return "pong!";
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getUser(@RequestHeader("X-User-Name") String username){
+        return ResponseEntity.ok("Hello " + username);
     }
 }
 

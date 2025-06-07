@@ -3,9 +3,11 @@ package com.chatty.AuthService.controller;
 
 
 
+import com.chatty.AuthService.dto.TokenHttpRequest;
 import com.chatty.AuthService.entity.Users;
 import com.chatty.AuthService.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -42,5 +44,11 @@ public class AuthController {
         return "hearBeat";
     }
 
+
+    @PostMapping("/validate")
+    @ResponseBody
+    public ResponseEntity<?> validate(@RequestBody TokenHttpRequest request){
+        return authService.validate(request);
+    }
 
 }

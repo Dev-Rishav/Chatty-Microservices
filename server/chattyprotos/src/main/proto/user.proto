@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option java_package = "com.chatty.user.grpc";
+option java_multiple_files = true;
+
+package user;
+
+service UserService {
+  rpc GetUserById (GetUserByIdRequest) returns (UserResponse);
+  rpc GetUserByUsername (GetUserByUsernameRequest) returns (UserResponse);
+}
+
+message GetUserByIdRequest {
+  string user_id = 1;
+}
+
+message GetUserByUsernameRequest {
+  string username = 1;
+}
+
+message UserResponse {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  string full_name = 4;
+  repeated string roles = 5;
+  string profile_image_url = 6;
+}
