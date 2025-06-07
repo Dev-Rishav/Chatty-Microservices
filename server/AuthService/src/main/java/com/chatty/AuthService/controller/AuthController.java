@@ -16,7 +16,7 @@ import java.util.Map;
 public class AuthController {
 
     @Autowired
-    private AuthService userService;
+    private AuthService authService;
 
 
 
@@ -24,7 +24,7 @@ public class AuthController {
     @ResponseBody
     public Map<String, Object> login(@RequestBody Users user) {
         System.out.println("the incoming object is "+user);
-        return userService.verify(user);
+        return authService.verify(user);
     }
 
 
@@ -34,7 +34,7 @@ public class AuthController {
     public Map<String,String> register(@RequestBody  Users user)
     {
         System.out.println("teh incoming object is= "+user);
-        return  userService.addUser(user);
+        return  authService.addUser(user);
     }
 
     @GetMapping("/ping")

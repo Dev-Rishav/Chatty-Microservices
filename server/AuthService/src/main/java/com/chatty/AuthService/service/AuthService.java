@@ -91,22 +91,4 @@ public class AuthService {
             return Collections.singletonMap("Message","failure");
     }
 
-    public List<UserDTO> getAllUsers() {
-
-        List<Users>  allUsers =repo.findAll();
-        List<UserDTO> allUsersDTO=new ArrayList<>();
-        for(int i=0;i<allUsers.size();i++){
-            UserDTO userDTO=new UserDTO();
-            userDTO.setUsername(allUsers.get(i).getUsername());
-            userDTO.setEmail(allUsers.get(i).getEmail());
-            userDTO.setUser_id(allUsers.get(i).getUser_id());
-            allUsersDTO.add(userDTO);
-        }
-        return allUsersDTO;
-    }
-
-
-    public Users findByEmail(String receiverEmail) {
-        return repo.findByEmail(receiverEmail);
-    }
 }
