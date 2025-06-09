@@ -3,19 +3,22 @@ package com.chatty.AuthService.controller;
 
 
 
+import com.chatty.AuthService.dto.TokenHttpRequest;
 import com.chatty.AuthService.entity.Users;
 import com.chatty.AuthService.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @CrossOrigin
 @RestController
+@RequestMapping("/auth")
 public class AuthController {
 
     @Autowired
-    private AuthService userService;
+    private AuthService authService;
 
 
 
@@ -23,7 +26,7 @@ public class AuthController {
     @ResponseBody
     public Map<String, Object> login(@RequestBody Users user) {
         System.out.println("the incoming object is "+user);
-        return userService.verify(user);
+        return authService.verify(user);
     }
 
 
@@ -33,7 +36,7 @@ public class AuthController {
     public Map<String,String> register(@RequestBody  Users user)
     {
         System.out.println("teh incoming object is= "+user);
-        return  userService.addUser(user);
+        return  authService.addUser(user);
     }
 
     @GetMapping("/ping")
@@ -41,5 +44,11 @@ public class AuthController {
         return "hearBeat";
     }
 
+
+    @PostMapping("/validate")
+    @ResponseBody
+    public ResponseEntity<?> validate(@RequestBody TokenHttpRequest request){
+        return authService.validate(request);
+    }
 
 }

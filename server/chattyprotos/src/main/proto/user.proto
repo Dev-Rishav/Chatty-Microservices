@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option java_package = "com.chatty.user.grpc";
+option java_multiple_files = true;
+
+package user;
+
+service UserService {
+  rpc GetUserByEmail (GetUserByEmailRequest) returns (UserResponse);
+  rpc GetAllUser (Empty) returns (AllUserResponse);
+}
+
+message Empty {}
+
+message AllUserResponse {
+  repeated UserResponse all_users = 1;
+}
+
+message GetUserByEmailRequest {
+  string email = 1;
+}
+
+message UserResponse {
+  int32 user_id = 1;
+  string username = 2;
+  string email = 3;
+  string profile_pic = 4;
+  google.protobuf.Timestamp created_at = 5;
+}

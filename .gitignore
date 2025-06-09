@@ -36,3 +36,4 @@ server/AllServices/src/main/resources/application.properties
 server/PaymentService/src/main/resources/application.properties
 server/APIGateway/src/main/resources/application.properties
 server/AuthService/src/main/resources/application.properties
+server/EurekaServer/src/main/resources/application.properties

@@ -1,14 +1,19 @@
 package com.chatty.AuthService.service;
 
 
+import com.chatty.AuthService.dto.TokenHttpRequest;
+import com.chatty.AuthService.dto.TokenHttpResponse;
 import com.chatty.AuthService.dto.UserDTO;
 import com.chatty.AuthService.entity.Users;
 import com.chatty.AuthService.repository.UserRepository;
 import com.chatty.AuthService.security.JWTSecurity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +33,8 @@ public class AuthService {
     private final int saltRounds=12;
 
     private BCryptPasswordEncoder encoder=new BCryptPasswordEncoder(saltRounds);
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     public Map<String, String> addUser(Users user) {
         Map<String, String> response = new HashMap<>();
@@ -74,7 +81,7 @@ public class AuthService {
                 );
         if(authentication.isAuthenticated()) {
 //            return jwtService.generateToken(user.getUsername());
-            String token= jwtSecurity.generateToken(user.getEmail());
+            String token= jwtSecurity.generateToken(user.getEmail(),user.getUser_id());
             Users authenticatedUser=repo.findByEmail(user.getEmail());
             System.out.println("token= "+token);
             UserDTO userDTO=new UserDTO();
@@ -91,22 +98,19 @@ public class AuthService {
             return Collections.singletonMap("Message","failure");
     }
 
-    public List<UserDTO> getAllUsers() {
 
-        List<Users>  allUsers =repo.findAll();
-        List<UserDTO> allUsersDTO=new ArrayList<>();
-        for(int i=0;i<allUsers.size();i++){
-            UserDTO userDTO=new UserDTO();
-            userDTO.setUsername(allUsers.get(i).getUsername());
-            userDTO.setEmail(allUsers.get(i).getEmail());
-            userDTO.setUser_id(allUsers.get(i).getUser_id());
-            allUsersDTO.add(userDTO);
+    public ResponseEntity<?> validate(TokenHttpRequest request) {
+        try {
+            String username = jwtSecurity.extractUsername(request.getToken());
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+            if (jwtSecurity.validateToken(request.getToken(), userDetails)) {
+                return ResponseEntity.ok(new TokenHttpResponse(true,username));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(new TokenHttpResponse(false,null));
         }
-        return allUsersDTO;
+        return ResponseEntity.status(401).body(new TokenHttpResponse(false,null));
     }
 
-
-    public Users findByEmail(String receiverEmail) {
-        return repo.findByEmail(receiverEmail);
-    }
 }
