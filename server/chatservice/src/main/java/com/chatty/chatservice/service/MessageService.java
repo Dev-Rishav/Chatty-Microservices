@@ -7,6 +7,7 @@ import com.chatty.chatservice.entity.Chat;
 import com.chatty.chatservice.entity.Message;
 import com.chatty.chatservice.repo.ChatRepo;
 import com.chatty.chatservice.repo.MessageRepo;
+import com.chatty.user.grpc.UserServiceGrpc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,14 +21,15 @@ import java.util.stream.Collectors;
 public class MessageService {
 
     private final MessageRepo messageRepository;
-    private final UsersRepo usersRepo;
     private final ChatRepo chatRepo;
     private final MessageRepo messageRepo;
+    private final UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
+
 
     @Autowired
-    public MessageService(MessageRepo messageRepository, UsersRepo usersRepo, ChatRepo chatRepo, MessageRepo messageRepo) {
+    public MessageService(MessageRepo messageRepository,UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub, ChatRepo chatRepo, MessageRepo messageRepo) {
         this.messageRepository = messageRepository;
-        this.usersRepo = usersRepo;
+        this.userServiceBlockingStub = userServiceBlockingStub;
         this.chatRepo = chatRepo;
         this.messageRepo = messageRepo;
     }
@@ -65,8 +67,8 @@ public class MessageService {
     private ChatMessageDTO mapToDTO(Message message) {
         return new ChatMessageDTO(
                 message.getId(),
-                message.getSender().getEmail(),
-                message.getReceiver().getEmail(),
+                message.getSender(),
+                message.getReceiver(),
                 message.getContent(),
                 message.getTimestamp(),
                 message.getFile_url()

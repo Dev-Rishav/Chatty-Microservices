@@ -1,5 +1,6 @@
 package com.chatty.AuthService.service;
 
+
 import com.chatty.AuthService.security.JWTSecurity;
 import com.chatty.protos.auth.AuthServiceGrpc;
 import com.chatty.protos.auth.TokenRequest;
@@ -28,7 +29,7 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
         if (username != null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             if (jwtService.validateToken(token, userDetails)) {
-                response.setValid(true).setUsername(username);
+                response.setValid(true).setEmail(username);
             }
         }
 

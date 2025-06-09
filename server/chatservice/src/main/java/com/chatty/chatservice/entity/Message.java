@@ -16,15 +16,8 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender", referencedColumnName = "email")
-    private Users sender;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receiver", referencedColumnName = "email")
-    private Users receiver;
+    private String sender;
+    private String receiver;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chatId")

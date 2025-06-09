@@ -6,15 +6,17 @@ import com.chatty.chatservice.dto.ChatDTO;
 import com.chatty.chatservice.dto.ChatMessageDTO;
 import com.chatty.chatservice.entity.Chat;
 import com.chatty.chatservice.entity.Message;
+import com.chatty.chatservice.pojo.Users;
 import com.chatty.chatservice.repo.ChatRepo;
 import com.chatty.chatservice.repo.MessageRepo;
+import com.chatty.user.grpc.GetUserByEmailRequest;
+import com.chatty.user.grpc.UserResponse;
+import com.chatty.user.grpc.UserServiceGrpc;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -22,17 +24,20 @@ import java.util.*;
 @Service
 public class ChatService {
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final MessageRepo messageRepository;
+    private final ChatRepo chatRepo;
 
-    @Autowired
-    private MessageRepo messageRepository;
-    @Autowired
-    private UsersRepo usersRepo;
-    @Autowired
-    private ChatRepo chatRepo;
-    @Autowired
-    private MessageRepo messageRepo;
+
+
+    private final UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
+
+    public ChatService (SimpMessagingTemplate messagingTemplate, ChatRepo chatRepo, UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub,MessageRepo messageRepository) {
+        this.userServiceBlockingStub = userServiceBlockingStub;
+        this.messageRepository = messageRepository;
+        this.messagingTemplate = messagingTemplate;
+        this.chatRepo = chatRepo;
+    }
 
     @Transactional
     public void sendPrivateMessage(ChatMessageDTO message, String senderEmail) {
@@ -48,10 +53,15 @@ public class ChatService {
             user1Id = user2Id;
             user2Id = temp;
         }
+        GetUserByEmailRequest senderEmailReq= GetUserByEmailRequest.newBuilder().setEmail(senderEmail).build();
+        GetUserByEmailRequest receiverEmailReq= GetUserByEmailRequest.newBuilder().setEmail(receiverEmail).build();
 
         // Fetch sender and receiver User entities from the UserRepository
-        Users sender = usersRepo.findByEmail(senderEmail);
-        Users receiver = usersRepo.findByEmail(receiverEmail);
+        UserResponse senderRes = userServiceBlockingStub.getUserByEmail(senderEmailReq);
+        UserResponse receiverRes = userServiceBlockingStub.getUserByEmail(receiverEmailReq);
+
+        String sender=senderRes.getEmail();
+        String receiver=receiverRes.getEmail();
 
         // Try to find existing chat with consistent ordering
         Chat chat = chatRepo.findByUser1IdAndUser2Id(user1Id, user2Id);
@@ -104,7 +114,7 @@ public class ChatService {
         if (chatIds.isEmpty()) return Collections.emptyList();
 
         // Step 2: Fetch latest message for each chat ID in a single query
-        List<Message> latestMessages = messageRepo.findLatestMessagesForChats(chatIds);
+        List<Message> latestMessages = messageRepository.findLatestMessagesForChats(chatIds);
 
         // Step 3: Build DTOs from messages
         List<ChatDTO> chatList = new ArrayList<>();
@@ -115,8 +125,15 @@ public class ChatService {
             String otherUserId = chat.getUser1Id().equals(currentUserEmail)
                     ? chat.getUser2Id()
                     : chat.getUser1Id();
+            GetUserByEmailRequest otherUserEmailReq= GetUserByEmailRequest.newBuilder().setEmail(otherUserId).build();
 
-            Users otherUser=usersRepo.findByEmail(otherUserId);
+
+            UserResponse userRes= userServiceBlockingStub.getUserByEmail(otherUserEmailReq);
+
+            Users otherUser=new  Users();
+            otherUser.setUserId(userRes.getUserId());
+            otherUser.setEmail(userRes.getEmail());
+            otherUser.setUsername(userRes.getUsername());
 
             ChatDTO dto = new ChatDTO();
 
