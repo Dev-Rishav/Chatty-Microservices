@@ -20,7 +20,9 @@ const App: React.FC = () => {
           <Toaster />
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/login" element={<Auth />} />
             <Route path="/" element={<Auth />} />
+            
             {/* Private Route */}
             <Route element={<PrivateRoute />}>
               <Route path="/home" element={<Home />} />

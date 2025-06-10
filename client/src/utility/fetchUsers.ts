@@ -8,7 +8,7 @@ export async function fetchUsersBySearch(query: string, token: string): Promise<
     }
   
     try {
-      const response = await axios.get(`http://localhost:8080/searchUsers`, {
+      const response = await axios.get(`http://localhost:8081/user/searchUsers`, {
         params: { query }, // search term as query parameter
         headers: {
           Authorization: `Bearer ${token}`,

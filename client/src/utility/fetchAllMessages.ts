@@ -10,7 +10,7 @@ import { RootState } from "../redux/store";
  */
 const fetchAllMessages = async ( token:string ,user: string) => {
   try {
-    const apiUrl:string = `http://localhost:8080/api/messages/between?user=${user}`
+    const apiUrl:string = `http://localhost:8081/ws/messages/between?user=${user}`
     const response = await axios.get(apiUrl, {
       headers: {
         Authorization: `Bearer ${token}`, // Include the token in the Authorization header
