@@ -51,6 +51,17 @@ public class CorsGlobalConfiguration {
 //                ).build();
 //    }
 
+    @Bean
+    public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
+        return builder.routes()
+                .route("notification_ws_route", r -> r
+                        .path("/ws/**")
+                        .uri("ws://localhost:8085")  // ✅ Must be `ws://` not `http://`
+                )
+                .build();
+    }
+
+
 
 
 

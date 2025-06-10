@@ -6,10 +6,12 @@ import com.chatty.notificationservice.dto.ContactRequestDTO;
 import com.chatty.notificationservice.service.ContactRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class ContactController extends BaseControllerNotf {
+@RequestMapping("/contact")
+public class ContactController {
 
 
     @Autowired

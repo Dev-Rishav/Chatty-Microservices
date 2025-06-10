@@ -19,7 +19,8 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-public class NotificationController extends  BaseControllerNotf{
+@RequestMapping("/notf")
+public class NotificationController {
 
     @Autowired
     private AuthServiceGrpc.AuthServiceBlockingStub authServiceBlockingStub;
