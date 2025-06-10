@@ -31,7 +31,7 @@ export const fetchNotificationHistory = () => {
   return async (dispatch: any, getState: any) => {
     try {
       const token = getState().auth.token; // adjust path if needed
-      const response = await axios.get("http://localhost:8081/ws/notifications", {
+      const response = await axios.get("http://localhost:8081/notf/notifications", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
