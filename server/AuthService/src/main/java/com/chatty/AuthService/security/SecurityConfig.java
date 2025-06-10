@@ -40,10 +40,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return  http
                 .csrf(customizer-> customizer.disable())
-                .cors(Customizer.withDefaults())
+//                .cors(Customizer.withDefaults())
+                    .cors(cors -> cors.disable())
+
                 .authorizeHttpRequests(request-> request
-                        .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+//                        .requestMatchers("/ws/**", "/app/**", "/topic/**", "/queue/**").permitAll()
+//                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/register","/auth/login","/auth/validate")
                         .permitAll()
                         .anyRequest().authenticated())
@@ -57,20 +59,20 @@ public class SecurityConfig {
                 .build();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
-        config.setAllowedMethods(List.of("*")); // Allow all methods for simplicity
-        config.setAllowedHeaders(List.of("*")); // Allow all headers
-        config.setExposedHeaders(List.of("Authorization")); // Expose Authorization header
-        config.setAllowCredentials(true);
-        config.setMaxAge(3600L); // 1 hour cache for preflight responses
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
+//    @Bean
+//    public CorsConfigurationSource corsConfigurationSource() {
+//        CorsConfiguration config = new CorsConfiguration();
+//        config.setAllowedOrigins(List.of("http://localhost:5173"));
+//        config.setAllowedMethods(List.of("*")); // Allow all methods for simplicity
+//        config.setAllowedHeaders(List.of("*")); // Allow all headers
+//        config.setExposedHeaders(List.of("Authorization")); // Expose Authorization header
+//        config.setAllowCredentials(true);
+//        config.setMaxAge(3600L); // 1 hour cache for preflight responses
+//
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", config);
+//        return source;
+//    }
 
 
     @Bean

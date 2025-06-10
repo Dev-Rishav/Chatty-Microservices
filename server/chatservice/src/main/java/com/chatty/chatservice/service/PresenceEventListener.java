@@ -11,6 +11,7 @@ import org.springframework.web.socket.messaging.AbstractSubProtocolEvent;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -40,7 +41,7 @@ public class PresenceEventListener {
 
     private String getEmailFromEvent(AbstractSubProtocolEvent event) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-        return accessor.getUser().getName(); // Make sure Principal is set correctly
+        return Objects.requireNonNull(accessor.getUser()).getName(); // Make sure Principal is set correctly /**/
     }
 
     public Set<String> getOnlineUsers() {

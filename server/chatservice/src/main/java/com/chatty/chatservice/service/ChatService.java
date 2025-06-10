@@ -9,6 +9,9 @@ import com.chatty.chatservice.entity.Message;
 import com.chatty.chatservice.pojo.Users;
 import com.chatty.chatservice.repo.ChatRepo;
 import com.chatty.chatservice.repo.MessageRepo;
+import com.chatty.protos.auth.AuthServiceGrpc;
+import com.chatty.protos.auth.TokenRequest;
+import com.chatty.protos.auth.TokenResponse;
 import com.chatty.user.grpc.GetUserByEmailRequest;
 import com.chatty.user.grpc.UserResponse;
 import com.chatty.user.grpc.UserServiceGrpc;
@@ -29,11 +32,12 @@ public class ChatService {
     private final ChatRepo chatRepo;
 
 
-
+    private final AuthServiceGrpc.AuthServiceBlockingStub authServiceBlockingStub;
     private final UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
-    public ChatService (SimpMessagingTemplate messagingTemplate, ChatRepo chatRepo, UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub,MessageRepo messageRepository) {
+    public ChatService (SimpMessagingTemplate messagingTemplate ,AuthServiceGrpc.AuthServiceBlockingStub authServiceBlockingStub , ChatRepo chatRepo, UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub,MessageRepo messageRepository) {
         this.userServiceBlockingStub = userServiceBlockingStub;
+        this.authServiceBlockingStub = authServiceBlockingStub;
         this.messageRepository = messageRepository;
         this.messagingTemplate = messagingTemplate;
         this.chatRepo = chatRepo;
@@ -106,8 +110,13 @@ public class ChatService {
         System.out.println("Message saved and sent: " + msg);
     }
 
-    public List<ChatDTO> getAllChats(Principal principal) {
-        String currentUserEmail = principal.getName();
+    public List<ChatDTO> getAllChats(String token) {
+//        String currentUserEmail = principal.getName();
+
+        TokenRequest tokenRequest = TokenRequest.newBuilder().setToken(token).build();
+        TokenResponse res=authServiceBlockingStub.validateToken(tokenRequest);
+
+        String currentUserEmail = res.getEmail();
 
         // Step 1: Find all chat IDs involving current user
         List<Integer> chatIds = chatRepo.findChatIdsByUserEmail(currentUserEmail);

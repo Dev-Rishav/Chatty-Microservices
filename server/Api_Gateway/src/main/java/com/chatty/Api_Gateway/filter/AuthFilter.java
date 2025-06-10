@@ -25,6 +25,11 @@ public class AuthFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
+
+        if (exchange.getRequest().getMethod().name().equalsIgnoreCase("OPTIONS")) {
+            return chain.filter(exchange);
+        }
+
         // List of public routes that don't require authentication
         if (isPublicRoute(path)) {
             return chain.filter(exchange);

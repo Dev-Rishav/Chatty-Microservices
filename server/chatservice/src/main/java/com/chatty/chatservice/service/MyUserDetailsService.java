@@ -7,7 +7,7 @@ package com.chatty.chatservice.service;
 
 
 
-import com.chatty.chatservice.entity.UserPrinciple;
+import com.chatty.chatservice.entity.UserPrincipal;
 import com.chatty.chatservice.pojo.Users;
 import com.chatty.user.grpc.GetUserByEmailRequest;
 import com.chatty.user.grpc.UserResponse;
@@ -48,7 +48,7 @@ public class MyUserDetailsService implements UserDetailsService {
             user.setProfilePic(response.getProfilePic());
             user.setUserId(response.getUserId());
 
-            return new UserPrinciple(user);
+            return new UserPrincipal(user);
         } catch (Exception e) {
             throw new UsernameNotFoundException("User not found via gRPC: " + e.getMessage());
         }

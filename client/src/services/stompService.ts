@@ -30,7 +30,7 @@ class StompService {
     }
 
 
-    const socket = new SockJS(`http://localhost:8080/ws?token=${token}`);
+    const socket = new SockJS(`http://localhost:8085/ws?token=${token}`);
     this.stompClient = Stomp.over(socket);
     this.stompClient.debug = () => {}; //disable logs
 

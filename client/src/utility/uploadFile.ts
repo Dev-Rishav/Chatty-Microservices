@@ -3,7 +3,7 @@ const uploadFile = async (file: File, token: string) => {
     const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch("http://localhost:8080/api/files/upload", {
+  const res = await fetch("http://localhost:8081/files/upload", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`, // Include the auth token in the headers

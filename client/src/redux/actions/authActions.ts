@@ -28,7 +28,7 @@ interface LoginResponse {
 export const loginUser = (credentials: Credentials) => async (dispatch: AppDispatch) => {
   dispatch({ type: LOGIN_REQUEST });
   try {
-    const response = await axios.post<LoginResponse>('http://localhost:8080/login', credentials);
+    const response = await axios.post<LoginResponse>('http://localhost:8081/auth/login', credentials);
     const { userDTO, token } = response.data;
 
     toast.success(`Welcome back, ${userDTO.username}!`);
@@ -41,7 +41,7 @@ export const loginUser = (credentials: Credentials) => async (dispatch: AppDispa
     });
 
     const res = await axios.get<string[]>(
-      'http://localhost:8080/api/presence/online',
+      'http://localhost:8081/ws/presence/online',
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -69,7 +69,7 @@ export const loginUser = (credentials: Credentials) => async (dispatch: AppDispa
 export const registerUser = (credentials: Credentials) => async (dispatch: AppDispatch) => {
   dispatch({ type: SIGNUP_REQUEST });
   try {
-    const res=await axios.post('http://localhost:8080/register', credentials);
+    const res=await axios.post('http://localhost:8081/auth/register', credentials);
 
     if(res.data?.status === "error"){
       toast.error(res.data.message)

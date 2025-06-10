@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/api/presence")
+@RequestMapping("/presence")
 public class PresenceController {
     @Autowired
     private PresenceEventListener presenceEventListener;
