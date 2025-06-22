@@ -10,8 +10,8 @@ import {
 import { useAppSelector } from "../../redux/hooks";
 import { fetchUsersBySearch } from "../../utility/fetchUsers";
 import { ContactRequestDTO, UserDTO } from "../../interfaces/types";
-import stompService from "../../services/stompService";
 import toast from "react-hot-toast";
+import notificationStompService from "../../services/notificationStompService";
 
 interface SideBarHeaderProps {
   isDarkMode: boolean;
@@ -81,8 +81,8 @@ const SideBarHeader: React.FC<SideBarHeaderProps> = ({
         senderEmail: currentUserEmail,
         receiverEmail: receiverEmail,
       };
-      stompService.connect(token, () => {
-        stompService.sendContactRequest(contactRequest);
+      notificationStompService.connect(token, () => {
+        notificationStompService.sendContactRequest(contactRequest);
       });
       toast.success("Request sent successfully!");
     } catch (error) {
