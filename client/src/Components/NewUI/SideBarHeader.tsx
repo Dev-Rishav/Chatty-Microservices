@@ -9,7 +9,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAppSelector } from "../../redux/hooks";
 import { fetchUsersBySearch } from "../../utility/fetchUsers";
-import { UserDTO } from "../../interfaces/types";
+import { ContactRequestDTO, UserDTO } from "../../interfaces/types";
+import stompService from "../../services/stompService";
+import toast from "react-hot-toast";
 
 interface SideBarHeaderProps {
   isDarkMode: boolean;
@@ -70,6 +72,24 @@ const SideBarHeader: React.FC<SideBarHeaderProps> = ({
     setSearchTerm("");
     setUserResults([]);
     setError("");
+  };
+
+
+  const handleSendRequest = async (receiverEmail:string) => {
+    try {
+      const contactRequest: ContactRequestDTO = {
+        senderEmail: currentUserEmail,
+        receiverEmail: receiverEmail,
+      };
+      stompService.connect(token, () => {
+        stompService.sendContactRequest(contactRequest);
+      });
+      toast.success("Request sent successfully!");
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+    }
+
+
   };
 
   return (
@@ -215,6 +235,7 @@ const SideBarHeader: React.FC<SideBarHeaderProps> = ({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className="paper-button px-3 py-1 text-sm hover:bg-amber-200/50"
+                        onClick={() => handleSendRequest(user.email)}
                       >
                         Add
                       </motion.button>

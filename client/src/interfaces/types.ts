@@ -37,6 +37,14 @@ export interface UserDTO{
 
 export interface Notification {
   id: string;
-  text: string;
-  read: boolean;
+  message: string;
+  isRead: boolean;
+  createdAt: any
+}
+
+
+
+export interface ContactRequestDTO{
+  senderEmail:string
+  receiverEmail:String
 }
