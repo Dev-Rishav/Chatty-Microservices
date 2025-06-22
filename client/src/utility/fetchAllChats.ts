@@ -8,7 +8,7 @@ import axios from "axios";
  */
 const fetchAllChats= async ( token:string) => {
   try {
-    const apiUrl:string = `http://localhost:8081/ws/allChats`
+    const apiUrl:string = `http://localhost:8081/chat/allChats`
     const response = await axios.get(apiUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
