@@ -16,7 +16,7 @@ import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import EmptyState from "./EmptyState";
 import SendMoneyModal from "./SendMoneyModal";
-import { Chat, Message } from "../../interfaces/types";
+import { Chat, Message, Notification } from "../../interfaces/types";
 import fetchAllChats from "../../utility/fetchAllChats";
 import { useSelector } from "react-redux";
 import store, { RootState } from "../../redux/store";
@@ -24,12 +24,14 @@ import fetchAllMessages from "../../utility/fetchAllMessages";
 import stompService from "../../services/stompService";
 import toast from "react-hot-toast";
 import uploadFile from "../../utility/uploadFile";
-import { useAppDispatch } from "../../redux/hooks";
+import { useAppDispatch,useAppSelector } from "../../redux/hooks";
 import { updateUserPresence } from "../../redux/actions/presenceActions";
 import ChatList from "./ChatList";
 import Navbar from "./Navbar";
-import { addNotification } from "../../redux/reducers/notificationReducer";
+import { addNotification } from "../../redux/actions/notificationActions";
 import SideBarHeader from "./SideBarHeader";
+import chatStompService from "../../services/chatStompService";
+import notificationStompService from "../../services/notificationStompService";
 
 const HomePage: React.FC = () => {
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
@@ -58,9 +60,9 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const connectStomp = () => {
       try {
-        stompService.connect(token, () => {
+        chatStompService.connect(token, () => {
           //subscribe to the presence updates (to get updates on online users)
-          stompService.subscribe("/topic/presence", (message) => {
+          chatStompService.subscribe("/topic/presence", (message) => {
             const { email, online } = message;
             dispatch(updateUserPresence(email, online)); // Dispatch presence updates to Redux
           });
@@ -139,21 +141,21 @@ const HomePage: React.FC = () => {
       try {
         const data = await uploadFile(selectedFile, token);
         payload.fileUrl = data.url;
-        stompService.send("/app/private-message", payload);
+        chatStompService.send("/app/private-message", payload);
         pushMessageToUI(data.url);
       } catch (error) {
         console.error("File upload failed:", error);
       }
     } else {
-      stompService.send("/app/private-message", payload);
+      chatStompService.send("/app/private-message", payload);
       pushMessageToUI();
     }
   };
 
   //event listeners for new messages
   useEffect(() => {
-    if (!stompService.isConnected()) return;
-    stompService.subscribe("/user/queue/messages", (payload: any) => {
+    if (!chatStompService.isConnected()) return;
+    chatStompService.subscribe("/user/queue/messages", (payload: any) => {
       if (payload.from === selectedChat?.email) {
         //bind it with the current message only if the sender is the current receiver
         setCurrentMessages((prevMessages) => {
@@ -177,7 +179,7 @@ const HomePage: React.FC = () => {
     // }
 
     return () => {
-      stompService.unsubscribe("/user/queue/messages");
+      chatStompService.unsubscribe("/user/queue/messages");
     };
   }, [selectedChat]);
 
@@ -185,21 +187,28 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     if (!token) return;
 
-    stompService.connect(token, () => {
+    notificationStompService.connect(token, () => {
       // subscribe to notifications topic
-      stompService.subscribe("/user/queue/notifications", (payload) => {
+      notificationStompService.subscribe("/user/queue/notifications", (payload) => {
+        const notification:Notification[]= useAppSelector(
+          (state: RootState) => state.notifications.list
+        );
+        notification.push({
+          id: payload.id || Date.now().toString(),
+          message: payload.message || "New Notification",
+          isRead: payload.read || false,
+          createdAt: payload.createdAt || new Date().toISOString(),
+        })
+
+        toast.success(`🔔 ${payload.message} `);
         dispatch(
-          addNotification({
-            id: payload.id || Date.now().toString(),
-            text: payload.message || "New Notification",
-            read: payload.read || false,
-          })
+          addNotification(notification)
         );
       });
     });
 
     return () => {
-      stompService.unsubscribe("/user/queue/notifications");
+      notificationStompService.unsubscribe("/user/queue/notifications");
     };
   }, [token, dispatch]);
 

@@ -42,6 +42,8 @@ public class ContactRequestService {
      */
     @Transactional
     public String sendContactRequest(ContactRequestDTO dto) {
+
+        System.out.println("Sending contact request");
         GetUserByEmailRequest senderReq=GetUserByEmailRequest.newBuilder().setEmail(dto.getSenderEmail()).build();
         UserResponse senderRes=userServiceBlockingStub.getUserByEmail(senderReq);
 

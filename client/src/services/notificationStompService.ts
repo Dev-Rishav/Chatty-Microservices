@@ -1,70 +1,67 @@
-// stompService.ts
 import * as Stomp from "stompjs";
 import SockJS from "sockjs-client";
 import { ContactRequestDTO } from "../interfaces/types";
 
-class StompService {
-  private static instance: StompService;
+class NotificationStompService {
+  private static instance: NotificationStompService;
   private stompClient: Stomp.Client | null = null;
   private connected = false;
   private subscriptions: { [destination: string]: Stomp.Subscription } = {};
 
   private constructor() {}
 
-  static getInstance(): StompService {
-    if (!StompService.instance) {
-      StompService.instance = new StompService();
+  static getInstance(): NotificationStompService {
+    if (!NotificationStompService.instance) {
+      NotificationStompService.instance = new NotificationStompService();
     }
-    return StompService.instance;
+    return NotificationStompService.instance;
   }
 
   isConnected(): boolean {
     return this.connected && !!this.stompClient?.connected;
   }
-  
 
   connect(token: string, onConnect?: () => void) {
-    if (this.connected ){ 
-      console.log("🔌 Already connected, skipping connect.");
+    if (this.connected) {
+      console.log("🔌 Already connected to Notification Service.");
       onConnect?.();
-       return;
+      return;
     }
 
-
-    const socket = new SockJS(`http://localhost:8085/ws?token=${token}`);
+    const socket = new SockJS(`http://localhost:8086/notify-ws?token=${token}`);
     this.stompClient = Stomp.over(socket);
-    this.stompClient.debug = () => {}; //disable logs
+    this.stompClient.debug = () => {}; // Disable logs
 
-    this.stompClient.connect({}, (frame:any) => {
-      this.connected = true;
-      console.log("🔌 WebSocket connected",frame);
-      onConnect?.();
-    },(error:any)=>{console.error("Stomp Connection error: ",error);
-    });
+    this.stompClient.connect(
+      {},
+      (frame: any) => {
+        this.connected = true;
+        console.log("🔔 Notification WebSocket connected", frame);
+        onConnect?.();
+      },
+      (error: any) => {
+        console.error("Notification WebSocket connection error: ", error);
+      }
+    );
   }
 
-
   subscribe(destination: string, callback: (message: any) => void) {
-
     if (!this.connected || !this.stompClient) {
       console.warn(`⚠️ Tried subscribing to ${destination} before connection.`);
       return;
     }
-
 
     if (this.subscriptions[destination]) {
       console.warn(`Already subscribed to ${destination}`);
       return;
     }
 
-    const subscription = this.stompClient?.subscribe(destination, (payload) => {
+    const subscription = this.stompClient.subscribe(destination, (payload:any) => {
       const message = JSON.parse(payload.body);
       callback(message);
     });
 
-    if (subscription) {
-      this.subscriptions[destination] = subscription;
-    }
+    this.subscriptions[destination] = subscription;
   }
 
   unsubscribe(destination: string) {
@@ -80,12 +77,11 @@ class StompService {
     this.stompClient?.send(destination, {}, JSON.stringify(body));
   }
 
-  // Adding a method to send a contact requestAdd commentMore actions
   sendContactRequest(contactRequest: ContactRequestDTO) {
     if (this.isConnected()) {
       this.send("/app/send-contact-request", contactRequest);
     } else {
-      console.warn("Not connected to WebSocket.");
+      console.warn("Not connected to Notification WebSocket.");
     }
   }
 
@@ -94,9 +90,9 @@ class StompService {
     this.subscriptions = {};
     this.stompClient?.disconnect(() => {
       this.connected = false;
-      console.log("🔌 WebSocket disconnected");
+      console.log("🔌 Notification WebSocket disconnected");
     });
   }
 }
 
-export default StompService.getInstance();
+export default NotificationStompService.getInstance();

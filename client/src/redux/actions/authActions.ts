@@ -41,7 +41,7 @@ export const loginUser = (credentials: Credentials) => async (dispatch: AppDispa
     });
 
     const res = await axios.get<string[]>(
-      'http://localhost:8081/ws/presence/online',
+      'http://localhost:8081/presence/online',
       { headers: { Authorization: `Bearer ${token}` } }
     );
 

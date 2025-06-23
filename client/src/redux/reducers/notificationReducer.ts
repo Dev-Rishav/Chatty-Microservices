@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Notification } from "../../interfaces/types";
+import { ADD_NOTIFICATION, CLEAR_NOTIFICATIONS, MARK_AS_READ, SET_NOTIFICATIONS } from "../actions/notificationActionTypes";
 
 
 
@@ -11,27 +12,39 @@ const initialState: NotificationState = {
   list: [],
 };
 
-export const notificationSlice = createSlice({
-  name: "notifications",
-  initialState,
-  reducers: {
-    addNotification: (state, action: PayloadAction<Notification>) => {
-      state.list.unshift(action.payload);
-    },
-    markAsRead: (state, action: PayloadAction<string>) => {
-      const index = state.list.findIndex(n => n.id === action.payload);
-      if (index !== -1) state.list[index].read = true;
-    },
-    clearNotifications: (state) => {
-      state.list = [];
-    },
-    setNotifications: (state, action: PayloadAction<Notification[]>) => {
-      state.list = action.payload;
-    },
-  },
-});
 
-export const { addNotification, markAsRead, clearNotifications,setNotifications } =
-  notificationSlice.actions;
+const notificationReducer = (state = initialState, action: any): NotificationState => {
+  switch (action.type) {
+    case ADD_NOTIFICATION:
+      return {
+        ...state,
+        list: [action.payload, ...state.list],
+      };
 
-export const notificationReducer = notificationSlice.reducer;
+    case MARK_AS_READ:
+      return {
+        ...state,
+        list: state.list.map((notification) =>
+        notification.id === action.payload ? { ...notification, read: true } : notification
+        ),
+      };
+
+    case CLEAR_NOTIFICATIONS:
+      return {
+        ...state,
+        list: [],
+      };
+
+    case SET_NOTIFICATIONS:
+      // console.log("reducer not", action.payload); // Log for debugging
+      return {
+        ...state,
+        list: action.payload,
+      };
+    default:
+      return state;
+  }
+};
+
+export default notificationReducer;
+
