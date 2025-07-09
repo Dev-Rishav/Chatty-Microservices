@@ -29,7 +29,8 @@ const Navbar: React.FC<NavbarProps> = (props) => {
   };
 
   const handleLogoClick = () => {
-    window.location.reload();
+    // Removed page reload - navigate instead
+    navigate('/Main');
   };
 
   return (
@@ -63,8 +64,7 @@ const Navbar: React.FC<NavbarProps> = (props) => {
           </div>
           <div className="absolute inset-x-0 flex justify-center pointer-events-none">
             <h1
-              className="text-3xl font-bold text-[#002D74] pointer-events-auto cursor-pointer"
-              onClick={handleLogoClick}
+              className="text-3xl font-bold text-[#002D74]"
             >
               Chatty
             </h1>

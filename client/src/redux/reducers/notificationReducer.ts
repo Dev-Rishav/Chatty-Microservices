@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Notification } from "../../interfaces/types";
-import { ADD_NOTIFICATION, CLEAR_NOTIFICATIONS, MARK_AS_READ, SET_NOTIFICATIONS } from "../actions/notificationActionTypes";
+import { ADD_NOTIFICATION, CLEAR_NOTIFICATIONS, MARK_AS_READ, SET_NOTIFICATIONS, REMOVE_NOTIFICATION, UPDATE_NOTIFICATION } from "../actions/notificationActionTypes";
 
 
 
@@ -19,6 +19,20 @@ const notificationReducer = (state = initialState, action: any): NotificationSta
       return {
         ...state,
         list: [action.payload, ...state.list],
+      };
+
+    case UPDATE_NOTIFICATION:
+      return {
+        ...state,
+        list: state.list.map((notification) =>
+          notification.id === action.payload.id ? action.payload : notification
+        ),
+      };
+
+    case REMOVE_NOTIFICATION:
+      return {
+        ...state,
+        list: state.list.filter((notification) => notification.id !== action.payload),
       };
 
     case MARK_AS_READ:

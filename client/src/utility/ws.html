@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chatty STOMP Client</title>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+  <h2>Chatty Notification Test</h2>
+  <button onclick="connect()">Connect WebSocket</button>
+  <button onclick="disconnect()">Disconnect</button>
+
+  <pre id="log"></pre>
+
+  <script>
+    let stompClient = null;
+    const jwtToken='eyJhbGciOiJIUzI1NiJ9.eyJFbWFpbCI6ImdnQGcuY29tIiwidXNlcklkIjowLCJzdWIiOiJnZ0BnLmNvbSIsImlhdCI6MTc1MjA4OTkyMCwiZXhwIjoxNzUyMTc2MzIwfQ.tYbAzzXbMgJ4As3PTlVUrPXqa_gFSbcI9i_IYacC8jc'
+    const endpoint = `http://localhost:8086/ws?token=${jwtToken}`;
+
+    function log(message) {
+      const logEl = document.getElementById("log");
+      logEl.textContent += message + "\n";
+    }
+
+    function connect() {
+      const socket = new SockJS(endpoint);
+      stompClient = Stomp.over(socket);
+
+      stompClient.debug = null; // Disable console logs
+
+      stompClient.connect({}, function (frame) {
+        log("✅ Connected: " + frame);
+
+        // Subscribe to user-specific notifications
+        stompClient.subscribe("/user/queue/notifications", function (message) {
+          const payload = JSON.parse(message.body);
+          log("🔔 Notification: " + JSON.stringify(payload));
+        });
+
+        // Subscribe to public presence topic
+        stompClient.subscribe("/topic/presence", function (message) {
+          const payload = JSON.parse(message.body);
+          log("👥 Presence update: " + JSON.stringify(payload));
+        });
+      }, function (error) {
+        log("❌ Connection error: " + error);
+      });
+    }
+
+    function disconnect() {
+      if (stompClient && stompClient.connected) {
+        stompClient.disconnect(() => {
+          log("🔌 Disconnected.");
+        });
+      }
+    }
+  </script>
+</body>
+</html>

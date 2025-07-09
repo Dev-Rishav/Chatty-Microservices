@@ -11,7 +11,7 @@ import java.util.Optional;
 @Repository
 public interface ContactRequestRepo extends JpaRepository<ContactRequest,Long> {
 
-    boolean existsBySenderAndReceiver(Users sender, Users receiver);
+    boolean existsBySenderAndReceiver(String sender, String receiver);
     Optional<ContactRequest> findById(long id);
 
 }

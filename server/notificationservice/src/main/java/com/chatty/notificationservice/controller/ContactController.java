@@ -27,6 +27,11 @@ public class ContactController {
     public String handleAcceptContactRequest(long requestId) {
         return contactRequestService.acceptContactRequest(requestId);
     }
+
+    @MessageMapping("/reject-contact-request")
+    public String handleRejectContactRequest(long requestId) {
+        return contactRequestService.rejectContactRequest(requestId);
+    }
 }
 
 
