@@ -24,11 +24,11 @@ import fetchAllMessages from "../../utility/fetchAllMessages";
 import stompService from "../../services/stompService";
 import toast from "react-hot-toast";
 import uploadFile from "../../utility/uploadFile";
-import { useAppDispatch,useAppSelector } from "../../redux/hooks";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { updateUserPresence } from "../../redux/actions/presenceActions";
 import ChatList from "./ChatList";
 import Navbar from "./Navbar";
-import { addNotification } from "../../redux/actions/notificationActions";
+import { addNotification, updateNotification } from "../../redux/actions/notificationActions";
 import SideBarHeader from "./SideBarHeader";
 import chatStompService from "../../services/chatStompService";
 import notificationStompService from "../../services/notificationStompService";
@@ -61,11 +61,13 @@ const HomePage: React.FC = () => {
     const connectStomp = () => {
       try {
         chatStompService.connect(token, () => {
-          //subscribe to the presence updates (to get updates on online users)
-          chatStompService.subscribe("/topic/presence", (message) => {
-            const { email, online } = message;
-            dispatch(updateUserPresence(email, online)); // Dispatch presence updates to Redux
-          });
+          // Delay the subscription by 300ms to ensure connection is fully ready
+          setTimeout(() => {
+            chatStompService.subscribe("/topic/presence", (message) => {
+              const { email, online } = message;
+              dispatch(updateUserPresence(email, online));
+            });
+          }, 300); // You can tweak this value (200-500ms usually safe)
         });
       } catch (error) {
         console.error("Error connecting to STOMP:", error);
@@ -154,7 +156,14 @@ const HomePage: React.FC = () => {
 
   //event listeners for new messages
   useEffect(() => {
-    if (!chatStompService.isConnected()) return;
+    
+    setTimeout(() => {
+      if (!chatStompService.isConnected()) {
+      console.warn(
+        "⚠️ Chat WebSocket is not connected. Cannot subscribe to messages."
+      );
+      return;
+    }
     chatStompService.subscribe("/user/queue/messages", (payload: any) => {
       if (payload.from === selectedChat?.email) {
         //bind it with the current message only if the sender is the current receiver
@@ -176,7 +185,7 @@ const HomePage: React.FC = () => {
       // const message = JSON.parse(payload.body);
       toast.success("💬 Got message:", payload.content);
     });
-    // }
+    }, 300); // Delay to ensure connection is ready
 
     return () => {
       chatStompService.unsubscribe("/user/queue/messages");
@@ -187,31 +196,69 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     if (!token) return;
 
+    console.log("🔌 Setting up notification WebSocket connection...");
+    
     notificationStompService.connect(token, () => {
+      console.log("✅ Notification WebSocket connected successfully");
       // subscribe to notifications topic
-      notificationStompService.subscribe("/user/queue/notifications", (payload) => {
-        const notification:Notification[]= useAppSelector(
-          (state: RootState) => state.notifications.list
-        );
-        notification.push({
-          id: payload.id || Date.now().toString(),
-          message: payload.message || "New Notification",
-          isRead: payload.read || false,
-          createdAt: payload.createdAt || new Date().toISOString(),
-        })
+      setTimeout(() => {
+        console.log("📡 Subscribing to /user/queue/notifications...");
+        notificationStompService.subscribe(
+          "/user/queue/notifications",
+          (payload) => {
+            console.log("🔔 Received notification payload:", payload);
 
-        toast.success(`🔔 ${payload.message} `);
-        dispatch(
-          addNotification(notification)
+            const notification: Notification = {
+              id: payload.id || Date.now().toString(),
+              message: payload.message || "New Notification",
+              isRead: payload.read || false,
+              createdAt: payload.createdAt || new Date().toISOString(),
+              type: payload.message?.includes("contact request") ? 'contact_request' : 'general',
+              requestId: payload.requestId || payload.id,
+              senderEmail: payload.senderEmail,
+              senderUsername: payload.senderUsername,
+            };
+
+            console.log("📝 Processing notification:", notification);
+            
+            // Check if this is an update to an existing notification or a new one
+            const existingNotifications = store.getState().notifications.list;
+            const existingNotification = existingNotifications.find(n => 
+              n.requestId === notification.requestId && 
+              n.type === 'contact_request'
+            );
+            
+            if (existingNotification && notification.message.includes("accepted")) {
+              // This is an acceptance update - update the existing notification
+              const updatedNotification = {
+                ...existingNotification,
+                message: notification.message,
+                type: 'general' as const, // Remove contact request type so buttons disappear
+                isRead: false
+              };
+              console.log("🔄 Updating existing notification for acceptance");
+              dispatch(updateNotification(updatedNotification));
+            } else {
+              // This is a new notification
+              console.log("➕ Adding new notification");
+              dispatch(addNotification(notification));
+            }
+            
+            toast.success(`🔔 ${payload.message}`);
+            console.log("✅ Notification processed and dispatched to Redux store");
+          }
         );
-      });
+      }, 300); // Delay to ensure connection is ready
     });
 
     return () => {
+      console.log("🧹 Cleaning up notification subscription...");
       notificationStompService.unsubscribe("/user/queue/notifications");
     };
   }, [token, dispatch]);
 
+
+  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -237,7 +284,10 @@ const HomePage: React.FC = () => {
           <div className="w-96 pr-4 py-6 flex flex-col">
             <div className="paper-container p-6 rounded-sm flex-1 flex flex-col shadow-paper">
               {/* Left Top */}
-              <SideBarHeader isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
+              <SideBarHeader
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+              />
 
               {/* Left Mid */}
               <ChatList

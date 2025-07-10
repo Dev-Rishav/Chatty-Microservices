@@ -1,6 +1,7 @@
 package com.chatty.notificationservice.config;
 
 
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -19,11 +20,17 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private CustomHandshakeHandler customHandshakeHandler;
+
+    public WebSocketConfig(CustomHandshakeHandler customHandshakeHandler) {
+        this.customHandshakeHandler = customHandshakeHandler;
+    }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/notify-ws")
-                .setAllowedOriginPatterns("http://localhost:5173")
+        registry.addEndpoint("/ws")
+                .setHandshakeHandler(customHandshakeHandler)
+                .setAllowedOriginPatterns("http://localhost:5173","http://127.0.0.1:5500")
                 .withSockJS();
     }
 

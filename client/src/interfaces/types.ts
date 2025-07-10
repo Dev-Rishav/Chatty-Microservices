@@ -39,7 +39,11 @@ export interface Notification {
   id: string;
   message: string;
   isRead: boolean;
-  createdAt: any
+  createdAt: any;
+  type?: 'contact_request' | 'general' | 'message';
+  requestId?: string;
+  senderEmail?: string;
+  senderUsername?: string;
 }
 
 

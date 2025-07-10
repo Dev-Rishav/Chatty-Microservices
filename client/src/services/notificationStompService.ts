@@ -28,7 +28,7 @@ class NotificationStompService {
       return;
     }
 
-    const socket = new SockJS(`http://localhost:8086/notify-ws?token=${token}`);
+    const socket = new SockJS(`http://localhost:8086/ws?token=${token}`);
     this.stompClient = Stomp.over(socket);
     this.stompClient.debug = () => {}; // Disable logs
 
@@ -80,6 +80,24 @@ class NotificationStompService {
   sendContactRequest(contactRequest: ContactRequestDTO) {
     if (this.isConnected()) {
       this.send("/app/send-contact-request", contactRequest);
+    } else {
+      console.warn("Not connected to Notification WebSocket.");
+    }
+  }
+
+  acceptContactRequest(requestId: string) {
+    if (this.isConnected()) {
+      this.send("/app/accept-contact-request", parseInt(requestId));
+      console.log("🤝 Accepting contact request:", requestId);
+    } else {
+      console.warn("Not connected to Notification WebSocket.");
+    }
+  }
+
+  rejectContactRequest(requestId: string) {
+    if (this.isConnected()) {
+      this.send("/app/reject-contact-request", parseInt(requestId));
+      console.log("❌ Rejecting contact request:", requestId);
     } else {
       console.warn("Not connected to Notification WebSocket.");
     }

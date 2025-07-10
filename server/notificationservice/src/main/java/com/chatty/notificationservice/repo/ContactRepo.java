@@ -10,6 +10,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ContactRepo extends JpaRepository<Contact,Long> {
-    boolean existsByOwnerAndContact(Users sender, Users receiver);
+    boolean existsByOwnerAndContact(String senderId, String receiverId);
 }
 

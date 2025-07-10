@@ -39,6 +39,7 @@ public class GrpcUserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
                 .newBuilder()
                 .setUserId(user.getUser_id())
                 .setEmail(user.getEmail())
+                .setUsername(user.getUsername())
                 .setCreatedAt(toProtoTimestamp(user.getCreated_at()))
                 .setProfilePic(user.getProfilePic()!=null ? user.getProfilePic() : "")
                 .build();
