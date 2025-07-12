@@ -172,34 +172,6 @@
 				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>io.github.ascopes</groupId>
-				<artifactId>protobuf-maven-plugin</artifactId>
-				<version>3.3.1</version>
-				<configuration>
-					<sourceDirectories>
-						<sourceDirectory>src/main/proto</sourceDirectory>
-					</sourceDirectories>
-					<protocVersion>${protobuf-java.version}</protocVersion>
-					<binaryMavenPlugins>
-						<binaryMavenPlugin>
-							<groupId>io.grpc</groupId>
-							<artifactId>protoc-gen-grpc-java</artifactId>
-							<version>${grpc.version}</version>
-							<options>jakarta_omit,@generated=omit</options>
-						</binaryMavenPlugin>
-					</binaryMavenPlugins>
-				</configuration>
-				<executions>
-					<execution>
-						<?m2e execute onConfiguration,onIncremental?>
-						<id>generate</id>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>

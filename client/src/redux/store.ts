@@ -2,6 +2,7 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import authReducer from './reducers/authReducer';
 import presenceReducer from './reducers/presenceReducer';
+import chatReducer from './reducers/chatReducer';
 import {
   persistStore,
   persistReducer,
@@ -19,13 +20,14 @@ const rootReducer = combineReducers({
   auth: authReducer,
   presence: presenceReducer,
   notifications: notificationReducer,
+  chats: chatReducer,
   // Add more reducers as needed
 });
 
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth', 'presence','notifications'], // persist only these reducers
+  whitelist: ['auth', 'presence','notifications', 'chats'], // persist only these reducers
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

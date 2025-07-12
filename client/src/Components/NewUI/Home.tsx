@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   MagnifyingGlassIcon,
   PlusCircleIcon,
@@ -17,7 +17,6 @@ import MessageInput from "./MessageInput";
 import EmptyState from "./EmptyState";
 import SendMoneyModal from "./SendMoneyModal";
 import { Chat, Message, Notification } from "../../interfaces/types";
-import fetchAllChats from "../../utility/fetchAllChats";
 import { useSelector } from "react-redux";
 import store, { RootState } from "../../redux/store";
 import fetchAllMessages from "../../utility/fetchAllMessages";
@@ -32,6 +31,14 @@ import { addNotification, updateNotification } from "../../redux/actions/notific
 import SideBarHeader from "./SideBarHeader";
 import chatStompService from "../../services/chatStompService";
 import notificationStompService from "../../services/notificationStompService";
+import ChatDebugger from "./ChatDebugger";
+import { 
+  fetchAllChats, 
+  handleNewMessage, 
+  handleContactAccepted, 
+  resetUnreadCount,
+  updateChatOnlineStatus
+} from "../../redux/actions/chatActions";
 
 const HomePage: React.FC = () => {
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
@@ -39,8 +46,8 @@ const HomePage: React.FC = () => {
   const [messageInput, setMessageInput] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showSendMoney, setShowSendMoney] = useState(false);
-  const [allChats, setAllChats] = useState<Chat[]>();
   const { token, userDTO } = useSelector((state: RootState) => state.auth);
+  const { list: allChats, loading: chatsLoading, error: chatsError } = useSelector((state: RootState) => state.chats);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -67,6 +74,8 @@ const HomePage: React.FC = () => {
             chatStompService.subscribe("/topic/presence", (message) => {
               const { email, online } = message;
               dispatch(updateUserPresence(email, online));
+              // Also update chat online status in Redux
+              dispatch(updateChatOnlineStatus(email, online));
             });
           }, 300); // You can tweak this value (200-500ms usually safe)
         });
@@ -77,10 +86,10 @@ const HomePage: React.FC = () => {
     };
 
     connectStomp();
-  }, [token]);
+  }, [token, dispatch]);
 
   //function to fetch messages between current and selected chat user
-  const fetchMessages = async (user: string) => {
+  const fetchMessages = useCallback(async (user: string) => {
     try {
       const res: Message[] = await fetchAllMessages(token, user);
       if (res && res.length > 0) {
@@ -90,7 +99,7 @@ const HomePage: React.FC = () => {
     } catch (error) {
       console.error("Error fetching messages:", error);
     }
-  };
+  }, [token]);
 
   //fetch message on selected chat
   useEffect(() => {
@@ -98,6 +107,9 @@ const HomePage: React.FC = () => {
       const chat = allChats.find((c) => c.email === selectedChatEmail);
       if (chat) {
         setSelectedChat(chat);
+        // Reset unread count when chat is selected
+        dispatch(resetUnreadCount(chat.email));
+        
         if (chat.id) {
           // Only fetch messages if there's a chat ID (existing conversation)
           fetchMessages(chat.email);
@@ -107,18 +119,13 @@ const HomePage: React.FC = () => {
         }
       }
     }
-  }, [selectedChatEmail]);
+  }, [selectedChatEmail,  dispatch]);
 
-  const getAllChats = async () => {
-    const res: Chat[] = await fetchAllChats(token);
-
-    if (res && res.length > 0) {
-      setAllChats(res);
-    }
-  };
   useEffect(() => {
-    getAllChats();
-  }, []);
+    if (token) {
+      dispatch(fetchAllChats(token));
+    }
+  }, [token, dispatch]);
 
   //send message function
   const handleSendMessage = async () => {
@@ -136,6 +143,10 @@ const HomePage: React.FC = () => {
       };
 
       setCurrentMessages((prev) => [...prev, messageToSend]);
+      
+      // Update Redux chat list with new message
+      dispatch(handleNewMessage(messageToSend, userDTO.email));
+      
       setMessageInput("");
       setSelectedFile(null);
     };
@@ -163,41 +174,46 @@ const HomePage: React.FC = () => {
 
   //event listeners for new messages
   useEffect(() => {
-    
-    setTimeout(() => {
-      if (!chatStompService.isConnected()) {
+    if (!chatStompService.isConnected()) {
       console.warn(
         "⚠️ Chat WebSocket is not connected. Cannot subscribe to messages."
       );
       return;
     }
+
     chatStompService.subscribe("/user/queue/messages", (payload: any) => {
+      const message: Message = {
+        id: Date.now(), // Temporary ID until the backend sends a real one
+        content: payload.content,
+        from: payload.from,
+        to: payload.to,
+        timestamp: new Date().toISOString(),
+        fileUrl: payload.fileUrl ? payload.fileUrl : null,
+        reactions: payload.reactions ? payload.reactions : {},
+        encrypted: payload.encrypted ? payload.encrypted : false,
+      };
+      
+      console.log("Message received:", message);
+      
+      // Update Redux chat list with new message
+      if (userDTO) {
+        dispatch(handleNewMessage(message, userDTO.email));
+      }
+      
+      // Only update current messages if from the currently selected chat
       if (payload.from === selectedChat?.email) {
-        //bind it with the current message only if the sender is the current receiver
         setCurrentMessages((prevMessages) => {
-          const message: Message = {
-            id: Date.now(), // Temporary ID until the backend sends a real one
-            content: payload.content,
-            from: payload.from,
-            to: payload.to,
-            timestamp: new Date().toISOString(),
-            fileUrl: payload.fileUrl ? payload.fileUrl : null,
-            reactions: payload.reactions ? payload.reactions : {},
-            encrypted: payload.encrypted ? payload.encrypted : false,
-          };
-          console.log("Message received:", message);
           return [...(prevMessages || []), message];
         });
       }
-      // const message = JSON.parse(payload.body);
+      
       toast.success("💬 Got message:", payload.content);
     });
-    }, 300); // Delay to ensure connection is ready
 
     return () => {
       chatStompService.unsubscribe("/user/queue/messages");
     };
-  }, [selectedChat]);
+  }, [selectedChat, dispatch, userDTO]);
 
   //* fetch notifications
   useEffect(() => {
@@ -235,6 +251,10 @@ const HomePage: React.FC = () => {
               n.type === 'contact_request'
             );
             
+            // Check if this notification is related to contact changes
+            const isContactAccepted = notification.message.includes("accepted your contact request") || 
+                                    notification.message.includes("You have accepted the contact request");
+            
             if (existingNotification && notification.message.includes("accepted")) {
               // This is an acceptance update - update the existing notification
               const updatedNotification = {
@@ -245,10 +265,23 @@ const HomePage: React.FC = () => {
               };
               console.log("🔄 Updating existing notification for acceptance");
               dispatch(updateNotification(updatedNotification));
+              
+              // 🚀 Add contact to chat list when accepted
+              if (notification.senderEmail && notification.senderUsername) {
+                console.log("➕ Adding accepted contact to chat list");
+                dispatch(handleContactAccepted(notification.senderEmail, notification.senderUsername));
+              }
+              
             } else {
               // This is a new notification
               console.log("➕ Adding new notification");
               dispatch(addNotification(notification));
+              
+              // 🚀 Handle contact acceptance from new notifications
+              if (isContactAccepted && notification.senderEmail && notification.senderUsername) {
+                console.log("➕ Adding new accepted contact to chat list");
+                dispatch(handleContactAccepted(notification.senderEmail, notification.senderUsername));
+              }
             }
             
             toast.success(`🔔 ${payload.message}`);
@@ -358,6 +391,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
+      <ChatDebugger />
     </>
   );
 };

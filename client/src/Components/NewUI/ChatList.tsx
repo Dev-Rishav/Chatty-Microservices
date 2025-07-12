@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Chat } from "../../interfaces/types";
 
 interface Props {
-  allChats: Chat[] | undefined;
+  allChats: Chat[];
   selectedChatId: number | null;
   setSelectedChatId: (id: number | null) => void;
   selectedChatEmail: string | null;
@@ -75,12 +75,19 @@ const ChatList: React.FC<Props> = ({
                     <p className="font-semibold text-lg font-playfair text-amber-900">
                       {chat.username}
                     </p>
-                    <span className="text-sm text-amber-700/80">
-                      {chat.timestamp ? new Date(chat.timestamp).toLocaleTimeString() : ''}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-amber-700/80">
+                        {chat.timestamp ? new Date(chat.timestamp).toLocaleTimeString() : ''}
+                      </span>
+                      { (chat.unread!=null) && chat.unread > 0 && (
+                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                          {chat.unread}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <p className="text-sm text-amber-700/80 mt-1 line-clamp-1">
-                    {chat.lastMessage}
+                    {chat.lastMessage || (chat.id ? "No messages yet" : "New contact")}
                   </p>
                 </div>
               </div>
