@@ -131,7 +131,7 @@
 
 ### **Database & Storage**
 - **PostgreSQL** - Primary relational database
-- **Redis** - Session storage and caching
+- **Redis** - Session storage, caching, and pub/sub messaging
 - **File Storage** - Media and file uploads
 
 ### **DevOps & Deployment**
@@ -139,6 +139,38 @@
 - **Maven** - Build automation and dependency management
 - **Vercel** - Frontend deployment
 - **CI/CD** - Automated testing and deployment
+
+## 🗃️ Redis Integration
+
+Redis serves as a critical component in the Chatty platform, providing high-performance caching and session management capabilities:
+
+### **Primary Use Cases**
+- **Session Management**: User authentication sessions and JWT token storage
+- **Caching Layer**: User profiles, chat metadata, and frequently accessed data
+- **Real-time Features**: WebSocket session management and user presence tracking
+- **Message Queuing**: Temporary storage for offline message delivery
+
+### **Service Integration**
+- **UserService**: User session persistence and profile caching
+- **AllServices**: Centralized Redis configuration and shared caching
+
+### **Configuration**
+```properties
+# Redis Configuration
+spring.redis.host=localhost
+spring.redis.port=6379
+spring.redis.database=0
+spring.redis.timeout=2000ms
+spring.redis.lettuce.pool.max-active=8
+spring.redis.lettuce.pool.max-idle=8
+spring.redis.lettuce.pool.min-idle=0
+```
+
+### **Benefits**
+- **Performance**: Sub-millisecond response times for cached data
+- **Scalability**: Distributed caching across multiple service instances
+- **Reliability**: Session persistence across service restarts
+- **Real-time**: Fast pub/sub messaging for live features
 
 ## 🔧 Microservices
 
@@ -190,6 +222,7 @@
 - **Java 21** or later
 - **Node.js 18** or later
 - **PostgreSQL 14** or later
+- **Redis 6.0** or later
 - **Maven 3.8** or later
 - **Git**
 
@@ -208,14 +241,29 @@
    GRANT ALL PRIVILEGES ON DATABASE chatty_microservices TO chatty_user;
    ```
 
-3. **Configure Application Properties**
+3. **Setup Redis**
    ```bash
-   # Update database credentials in each service's application.properties
-   cd server/AuthService/src/main/resources
-   # Edit application.properties with your database credentials
+   # Install Redis (Ubuntu/Debian)
+   sudo apt update
+   sudo apt install redis-server
+   
+   # Start Redis server
+   sudo systemctl start redis-server
+   sudo systemctl enable redis-server
+   
+   # Verify Redis is running
+   redis-cli ping
+   # Should return: PONG
    ```
 
-4. **Build and Start Services**
+4. **Configure Application Properties**
+   ```bash
+   # Update database and Redis credentials in each service's application.properties
+   cd server/AuthService/src/main/resources
+   # Edit application.properties with your database and Redis credentials
+   ```
+
+5. **Build and Start Services**
    ```bash
    # Build proto definitions first
    cd server/chattyprotos
@@ -262,12 +310,22 @@
 ### **Docker Setup (Optional)**
 
 ```bash
-# Build and run all services
+# Build and run all services with Redis
 docker-compose up -d
 
 # Or build specific services
-docker-compose up -d postgres eureka-server api-gateway
+docker-compose up -d postgres redis eureka-server api-gateway
+
+# Check Redis container status
+docker-compose ps redis
 ```
+
+**Docker Compose Services:**
+- PostgreSQL (Port 5432)
+- Redis (Port 6379)
+- Eureka Server (Port 8761)
+- API Gateway (Port 8081)
+- All microservices with their respective ports
 
 ## 📚 API Documentation
 
