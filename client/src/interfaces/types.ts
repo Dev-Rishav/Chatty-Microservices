@@ -17,7 +17,7 @@ export interface Message {
 }
 
 export interface Chat {
-  id: number;
+  id: number | null; // Allow null for contacts without message history
   email:string
   username: string;
   lastMessage: string;

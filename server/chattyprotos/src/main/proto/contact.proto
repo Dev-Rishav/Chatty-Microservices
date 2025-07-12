@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.chatty.notification.grpc";
+
+package notification;
+
+// Contact service for managing user contacts
+service ContactService {
+    // Get all contacts for a user
+    rpc GetUserContacts(GetUserContactsRequest) returns (GetUserContactsResponse);
+}
+
+// Request to get user contacts
+message GetUserContactsRequest {
+    string userEmail = 1;
+}
+
+// Response containing user contacts
+message GetUserContactsResponse {
+    repeated ContactInfo contacts = 1;
+}
+
+// Contact information
+message ContactInfo {
+    int32 contactId = 1;
+    string contactEmail = 2;
+    string ownerEmail = 3;
+    string profilePic = 4;
+    string contactName = 5;
+}

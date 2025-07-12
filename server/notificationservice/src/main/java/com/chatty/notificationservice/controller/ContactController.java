@@ -1,7 +1,5 @@
 package com.chatty.notificationservice.controller;
 
-
-
 import com.chatty.notificationservice.dto.ContactRequestDTO;
 import com.chatty.notificationservice.service.ContactRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/contact")
 public class ContactController {
 
-
     @Autowired
     private ContactRequestService contactRequestService;
-
 
     @MessageMapping("/send-contact-request")
     public String handleContactRequest(ContactRequestDTO request) {
@@ -33,5 +29,3 @@ public class ContactController {
         return contactRequestService.rejectContactRequest(requestId);
     }
 }
-
-

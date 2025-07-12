@@ -35,6 +35,7 @@ import notificationStompService from "../../services/notificationStompService";
 
 const HomePage: React.FC = () => {
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const [selectedChatEmail, setSelectedChatEmail] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showSendMoney, setShowSendMoney] = useState(false);
@@ -56,7 +57,7 @@ const HomePage: React.FC = () => {
     window.location.href = "/login";
     return null;
   }
-
+  //initiate stomp connection for presence updates
   useEffect(() => {
     const connectStomp = () => {
       try {
@@ -93,14 +94,20 @@ const HomePage: React.FC = () => {
 
   //fetch message on selected chat
   useEffect(() => {
-    if (allChats && selectedChatId) {
-      const chat = allChats.find((c) => c.id === selectedChatId);
+    if (allChats && selectedChatEmail) {
+      const chat = allChats.find((c) => c.email === selectedChatEmail);
       if (chat) {
         setSelectedChat(chat);
-        fetchMessages(chat.email);
+        if (chat.id) {
+          // Only fetch messages if there's a chat ID (existing conversation)
+          fetchMessages(chat.email);
+        } else {
+          // New contact without message history
+          setCurrentMessages([]);
+        }
       }
     }
-  }, [selectedChatId]);
+  }, [selectedChatEmail]);
 
   const getAllChats = async () => {
     const res: Chat[] = await fetchAllChats(token);
@@ -294,6 +301,8 @@ const HomePage: React.FC = () => {
                 allChats={allChats}
                 selectedChatId={selectedChatId}
                 setSelectedChatId={setSelectedChatId}
+                selectedChatEmail={selectedChatEmail}
+                setSelectedChatEmail={setSelectedChatEmail}
                 onlineUsersArray={onlineUsersArray}
               />
 

@@ -1,6 +1,9 @@
 package com.chatty.chatservice.config;
 
 
+
+
+import com.chatty.notification.grpc.ContactServiceGrpc;
 import com.chatty.protos.auth.AuthServiceGrpc;
 import com.chatty.user.grpc.UserServiceGrpc;
 import io.grpc.Channel;
@@ -21,5 +24,11 @@ public class GrpcClientConfig {
     public AuthServiceGrpc.AuthServiceBlockingStub authServiceBlockingStub(GrpcChannelFactory channelFactory) {
         Channel channel = channelFactory.createChannel("auth");
         return AuthServiceGrpc.newBlockingStub(channel);
+    }
+
+    @Bean
+    public ContactServiceGrpc.ContactServiceBlockingStub contactServiceBlockingStub(GrpcChannelFactory channelFactory) {
+        Channel channel = channelFactory.createChannel("contact"); // matches notification service
+        return ContactServiceGrpc.newBlockingStub(channel);
     }
 }

@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 //this DTO is ued for sending chat data to the frontend /allChats
 public class ChatDTO {
-    private int id;
+    private Integer id; // Changed from int to Integer to allow null values
     private String email;
     private String username;
     private String lastMessage;
