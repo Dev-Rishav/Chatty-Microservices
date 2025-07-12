@@ -6,9 +6,11 @@ import com.cloudinary.utils.ObjectUtils;
 import com.rishav.Chatty.dto.ChatDTO;
 import com.rishav.Chatty.dto.ChatMessageDTO;
 import com.rishav.Chatty.entities.Chat;
+import com.rishav.Chatty.entities.Contact;
 import com.rishav.Chatty.entities.Message;
 import com.rishav.Chatty.entities.Users;
 import com.rishav.Chatty.repo.ChatRepo;
+import com.rishav.Chatty.repo.ContactRepo;
 import com.rishav.Chatty.repo.MessageRepo;
 import com.rishav.Chatty.repo.UsersRepo;
 import jakarta.transaction.Transactional;
@@ -36,6 +38,8 @@ public class ChatService {
     private ChatRepo chatRepo;
     @Autowired
     private MessageRepo messageRepo;
+    @Autowired
+    private ContactRepo contactRepository;
 
     @Transactional
     public void sendPrivateMessage(ChatMessageDTO message, String senderEmail) {
@@ -101,40 +105,66 @@ public class ChatService {
 
     public List<ChatDTO> getAllChats(Principal principal) {
         String currentUserEmail = principal.getName();
+        Users currentUser = usersRepo.findByEmail(currentUserEmail);
 
-        // Step 1: Find all chat IDs involving current user
+        // Step 1: Get all contacts for the current user
+        List<Contact> contacts = contactRepository.findByOwnerEmail(currentUserEmail);
+        if (contacts.isEmpty()) return Collections.emptyList();
+
+        // Step 2: Find all chat IDs involving current user (for messages)
         List<Integer> chatIds = chatRepo.findChatIdsByUserEmail(currentUserEmail);
-        if (chatIds.isEmpty()) return Collections.emptyList();
+        
+        // Step 3: Fetch latest messages for existing chats
+        Map<String, Message> latestMessagesMap = new HashMap<>();
+        if (!chatIds.isEmpty()) {
+            List<Message> latestMessages = messageRepo.findLatestMessagesForChats(chatIds);
+            for (Message message : latestMessages) {
+                Chat chat = message.getChat();
+                String otherUserId = chat.getUser1Id().equals(currentUserEmail)
+                        ? chat.getUser2Id()
+                        : chat.getUser1Id();
+                latestMessagesMap.put(otherUserId, message);
+            }
+        }
 
-        // Step 2: Fetch latest message for each chat ID in a single query
-        List<Message> latestMessages = messageRepo.findLatestMessagesForChats(chatIds);
-
-        // Step 3: Build DTOs from messages
+        // Step 4: Build DTOs for all contacts
         List<ChatDTO> chatList = new ArrayList<>();
-        for (Message message : latestMessages) {
-            Chat chat = message.getChat();
-
-            // Determine the other user in the chat
-            String otherUserId = chat.getUser1Id().equals(currentUserEmail)
-                    ? chat.getUser2Id()
-                    : chat.getUser1Id();
-
-            Users otherUser=usersRepo.findByEmail(otherUserId);
+        for (Contact contact : contacts) {
+            Users contactUser = contact.getContact();
+            String contactEmail = contactUser.getEmail();
 
             ChatDTO dto = new ChatDTO();
+            dto.setEmail(contactEmail);
+            dto.setUsername(contactUser.getUsername());
+            dto.setProfilePic(contactUser.getProfilePic());
 
-            dto.setId(chat.getChatId());
-            dto.setEmail(otherUser.getEmail());
-            dto.setUsername(otherUser.getUsername());
-            dto.setProfilePic(otherUser.getProfilePic());
-            dto.setLastMessage(message.getContent());
-            dto.setTimestamp(message.getTimestamp());
-            dto.setFileUrl(message.getFile_url());
+            // Check if there's a message history with this contact
+            Message latestMessage = latestMessagesMap.get(contactEmail);
+            if (latestMessage != null) {
+                // Contact with message history
+                dto.setId(latestMessage.getChat().getChatId());
+                dto.setLastMessage(latestMessage.getContent());
+                dto.setTimestamp(latestMessage.getTimestamp());
+                dto.setFileUrl(latestMessage.getFile_url());
+            } else {
+                // Contact without message history - set default values
+                dto.setId(null); // No chat ID yet
+                dto.setLastMessage("Start a conversation"); // Default message
+                dto.setTimestamp(null); // No timestamp
+                dto.setFileUrl(null); // No file
+            }
 
             chatList.add(dto);
         }
 
-        return chatList;
+        // Sort by timestamp (nulls last for new contacts)
+        chatList.sort((a, b) -> {
+            if (a.getTimestamp() == null && b.getTimestamp() == null) return 0;
+            if (a.getTimestamp() == null) return 1;
+            if (b.getTimestamp() == null) return -1;
+            return b.getTimestamp().compareTo(a.getTimestamp());
+        });
 
+        return chatList;
     }
 }

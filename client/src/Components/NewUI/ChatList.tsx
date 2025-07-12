@@ -3,9 +3,11 @@ import React, { useState } from "react";
 import { Chat } from "../../interfaces/types";
 
 interface Props {
-  allChats: Chat[] | undefined;
+  allChats: Chat[];
   selectedChatId: number | null;
-  setSelectedChatId: (id: number) => void;
+  setSelectedChatId: (id: number | null) => void;
+  selectedChatEmail: string | null;
+  setSelectedChatEmail: (email: string) => void;
   onlineUsersArray: string[];
 }
 
@@ -13,6 +15,8 @@ const ChatList: React.FC<Props> = ({
   allChats,
   selectedChatId,
   setSelectedChatId,
+  selectedChatEmail,
+  setSelectedChatEmail,
   onlineUsersArray,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,11 +44,14 @@ const ChatList: React.FC<Props> = ({
         {filteredChats && filteredChats.length > 0 ? (
           filteredChats.map((chat) => (
             <div
-              key={chat.id}
+              key={chat.email} // Use email as key since it's always unique
               className={`paper-card hover:bg-amber-50 transition-all cursor-pointer p-4 ${
-                selectedChatId === chat.id ? "bg-amber-100" : ""
+                selectedChatEmail === chat.email ? "bg-amber-100" : ""
               }`}
-              onClick={() => setSelectedChatId(chat.id)}
+              onClick={() => {
+                setSelectedChatId(chat.id);
+                setSelectedChatEmail(chat.email);
+              }}
             >
               <div className="flex items-center">
                 <div className="relative">
@@ -68,12 +75,19 @@ const ChatList: React.FC<Props> = ({
                     <p className="font-semibold text-lg font-playfair text-amber-900">
                       {chat.username}
                     </p>
-                    <span className="text-sm text-amber-700/80">
-                      {new Date(chat.timestamp).toLocaleTimeString()}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-amber-700/80">
+                        {chat.timestamp ? new Date(chat.timestamp).toLocaleTimeString() : ''}
+                      </span>
+                      { (chat.unread!=null) && chat.unread > 0 && (
+                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                          {chat.unread}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <p className="text-sm text-amber-700/80 mt-1 line-clamp-1">
-                    {chat.lastMessage}
+                    {chat.lastMessage || (chat.id ? "No messages yet" : "New contact")}
                   </p>
                 </div>
               </div>
