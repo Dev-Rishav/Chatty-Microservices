@@ -20,6 +20,9 @@ public class PresenceEventListener {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+    
+    @Autowired
+    private SSEService sseService;
 
     private Set<String> onlineUsers = ConcurrentHashMap.newKeySet();
 
@@ -28,7 +31,11 @@ public class PresenceEventListener {
         String email = getEmailFromEvent(event);
         onlineUsers.add(email);
 
+        // Send via traditional WebSocket (for backwards compatibility)
         messagingTemplate.convertAndSend("/topic/presence", new PresenceUpdateDTO(email, true));
+        
+        // Send via SSE
+        sseService.notifyPresenceChange(onlineUsers);
     }
 
     @EventListener
@@ -36,7 +43,11 @@ public class PresenceEventListener {
         String email = getEmailFromEvent(event);
         onlineUsers.remove(email);
 
+        // Send via traditional WebSocket (for backwards compatibility)
         messagingTemplate.convertAndSend("/topic/presence", new PresenceUpdateDTO(email, false));
+        
+        // Send via SSE
+        sseService.notifyPresenceChange(onlineUsers);
     }
 
     private String getEmailFromEvent(AbstractSubProtocolEvent event) {

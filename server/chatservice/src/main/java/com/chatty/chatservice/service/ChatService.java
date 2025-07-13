@@ -56,7 +56,7 @@ public class ChatService {
 //    }
 
     @Transactional
-    public void sendPrivateMessage(ChatMessageDTO message, String senderEmail) {
+    public ChatMessageDTO sendPrivateMessage(ChatMessageDTO message, String senderEmail) {
 
         // Get  receiver from the DTO
         String receiverEmail = message.getTo();
@@ -120,6 +120,9 @@ public class ChatService {
         );
 
         System.out.println("Message saved and sent: " + msg);
+        
+        // Return the saved message DTO for SSE notification
+        return chatMessageDTO;
     }
 
     public List<ChatDTO> getAllChats(String token) {
