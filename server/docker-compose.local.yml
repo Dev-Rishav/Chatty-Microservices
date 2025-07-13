@@ -1,0 +1,237 @@
+# Local Development Docker Compose
+# This file sets up the entire backend locally with all services
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: chatty-postgres
+    environment:
+      POSTGRES_DB: chatty_microservices
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - chatty-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: chatty-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - chatty-network
+
+  # Eureka Server
+  eureka-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: EurekaServer
+    container_name: chatty-eureka
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8761
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - chatty-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: AuthService
+    container_name: chatty-auth
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8082
+      - EUREKA_URL=http://eureka-server:8761/eureka
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/chatty_microservices
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - JWT_SECRET=fYekcW1cF7V3tBBr+ehA4BrwhqNCq0S5XSIZ2cPi0kI=
+    ports:
+      - "8082:8082"
+      - "9092:9092"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - chatty-network
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: userservice
+    container_name: chatty-user
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8084
+      - EUREKA_URL=http://eureka-server:8761/eureka
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/chatty_microservices
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DATABASE=1
+    ports:
+      - "8084:8084"
+      - "9094:9094"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - chatty-network
+
+  # Chat Service
+  chat-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: chatservice
+    container_name: chatty-chat
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8085
+      - EUREKA_URL=http://eureka-server:8761/eureka
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/chatty_microservices
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - chatty-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: notificationservice
+    container_name: chatty-notification
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8086
+      - EUREKA_URL=http://eureka-server:8761/eureka
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/chatty_microservices
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    ports:
+      - "8086:8086"
+      - "9096:9096"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - chatty-network
+
+  # Payment Service
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: PaymentService
+    container_name: chatty-payment
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8087
+      - EUREKA_URL=http://eureka-server:8761/eureka
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/chatty_microservices
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    ports:
+      - "8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - chatty-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: Api_Gateway
+    container_name: chatty-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8081
+      - EUREKA_URL=http://eureka-server:8761/eureka
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+    ports:
+      - "8081:8081"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - chatty-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  chatty-network:
+    driver: bridge
