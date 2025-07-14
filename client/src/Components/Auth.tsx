@@ -2,7 +2,6 @@ import React, { useEffect, useState, FormEvent } from 'react';
 import { PiEye, PiEyeSlash } from "react-icons/pi";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from 'react-router-dom';
-import Navbar from './Navbar';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { loginUser, registerUser } from "../redux/actions/authActions";
@@ -71,8 +70,6 @@ const Auth: React.FC = () => {
     <div
       
     >
-    
-       {/* <Navbar /> */}
       <section className="min-h-screen flex items-center justify-center bg-[#f5f1e8] p-4 "
       style={{ backgroundImage: `url(${bg2})` , backgroundSize: 'auto' }}
       >

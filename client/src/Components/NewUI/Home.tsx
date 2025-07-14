@@ -20,18 +20,17 @@ import { Chat, Message, Notification } from "../../interfaces/types";
 import { useSelector } from "react-redux";
 import store, { RootState } from "../../redux/store";
 import fetchAllMessages from "../../utility/fetchAllMessages";
-import stompService from "../../services/stompService";
 import toast from "react-hot-toast";
 import uploadFile from "../../utility/uploadFile";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { updateUserPresence, setInitialOnlineUsers } from "../../redux/actions/presenceActions";
+import { useAppDispatch } from "../../redux/hooks";
+import {  setInitialOnlineUsers } from "../../redux/actions/presenceActions";
 import ChatList from "./ChatList";
 import Navbar from "./Navbar";
 import { addNotification, updateNotification } from "../../redux/actions/notificationActions";
 import SideBarHeader from "./SideBarHeader";
 import chatStompService from "../../services/chatStompService";
 import notificationStompService from "../../services/notificationStompService";
-import ChatDebugger from "./ChatDebugger";
+
 import { 
   fetchAllChats, 
   handleNewMessage, 
