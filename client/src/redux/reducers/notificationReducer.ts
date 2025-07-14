@@ -1,4 +1,3 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Notification } from "../../interfaces/types";
 import { ADD_NOTIFICATION, CLEAR_NOTIFICATIONS, MARK_AS_READ, SET_NOTIFICATIONS, REMOVE_NOTIFICATION, UPDATE_NOTIFICATION } from "../actions/notificationActionTypes";
 
