@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Grid } from '@mui/material';
 import Navbar from './Navbar.tsx';
 import Sidebar from './Sidebar';
@@ -8,6 +8,7 @@ import { RootState } from '../redux/store';
 
 const Main: React.FC = () => {
   const loading = useSelector((state: RootState) => state.auth.loading);
+  
 
   if (loading) {
     return <div>Loading...</div>; 
@@ -17,7 +18,7 @@ const Main: React.FC = () => {
     <div>
       <Grid container>
         <Grid item xs={12}>
-          <Navbar />
+          <Navbar title="Chatty" />
         </Grid>
         <Grid item xs={12} sm={4} md={3}>
           <Sidebar />

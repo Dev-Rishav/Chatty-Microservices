@@ -24,7 +24,7 @@ import stompService from "../../services/stompService";
 import toast from "react-hot-toast";
 import uploadFile from "../../utility/uploadFile";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { updateUserPresence } from "../../redux/actions/presenceActions";
+import { updateUserPresence, setInitialOnlineUsers } from "../../redux/actions/presenceActions";
 import ChatList from "./ChatList";
 import Navbar from "./Navbar";
 import { addNotification, updateNotification } from "../../redux/actions/notificationActions";
@@ -39,6 +39,7 @@ import {
   resetUnreadCount,
   updateChatOnlineStatus
 } from "../../redux/actions/chatActions";
+import hybridChatService from "../../services/hybridChatService";
 
 const HomePage: React.FC = () => {
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
@@ -64,29 +65,68 @@ const HomePage: React.FC = () => {
     window.location.href = "/login";
     return null;
   }
-  //initiate stomp connection for presence updates
-  useEffect(() => {
-    const connectStomp = () => {
-      try {
-        chatStompService.connect(token, () => {
-          // Delay the subscription by 300ms to ensure connection is fully ready
-          setTimeout(() => {
-            chatStompService.subscribe("/topic/presence", (message) => {
-              const { email, online } = message;
-              dispatch(updateUserPresence(email, online));
-              // Also update chat online status in Redux
-              dispatch(updateChatOnlineStatus(email, online));
-            });
-          }, 300); // You can tweak this value (200-500ms usually safe)
-        });
-      } catch (error) {
-        console.error("Error connecting to STOMP:", error);
-        throw error;
-      }
-    };
 
-    connectStomp();
-  }, [token, dispatch]);
+
+  // Initialize hybrid chat service when component mounts
+  useEffect(() => {
+    if (token) {
+      hybridChatService.initialize(token);
+      
+      // Set up global event listeners for background updates
+      hybridChatService.onPresenceUpdate((users) => {
+        console.log("👥 Presence update received:", users);
+        
+        // Convert array of online users to Record<string, boolean> format
+        const onlineUsersMap: Record<string, boolean> = {};
+        if (users && Array.isArray(users) && users.length > 0) {
+          users.forEach((email) => {
+            onlineUsersMap[email] = true;
+          });
+          console.log("📊 Converted to presence map:", onlineUsersMap);
+        } else {
+          console.log("📊 No online users or empty array received");
+        }
+        
+        // Update the main presence state (this fixes the UI display issue)
+        dispatch(setInitialOnlineUsers(onlineUsersMap));
+        
+        // Also update individual chat online status in Redux for chat list
+        if (users && Array.isArray(users)) {
+          // First, mark all current chats as offline (reset)
+          const currentChats = store.getState().chats.list;
+          currentChats.forEach((chat) => {
+            const isOnline = users.includes(chat.email);
+            dispatch(updateChatOnlineStatus(chat.email, isOnline));
+          });
+        }
+        
+        console.log("✅ Presence state updated in Redux");
+      });
+
+      hybridChatService.onChatListUpdate((chats) => {
+        console.log("💬 Chat list update:", chats);
+        // Update chat list in global state
+      });
+
+      hybridChatService.onMessageUpdate((message) => {
+        console.log("📨 Message update:", message);
+        // Handle message updates (notifications, etc.)
+        dispatch(handleNewMessage(message, message.to));
+      });
+    }
+
+    // Cleanup on unmount
+    return () => {
+      hybridChatService.disconnect();
+    };
+  }, [token]);
+
+
+
+
+
+  // Presence updates are now handled via SSE in hybridChatService (Kafka-driven)
+  // No need for separate WebSocket presence subscriptions
 
   //function to fetch messages between current and selected chat user
   const fetchMessages = useCallback(async (user: string) => {
@@ -94,7 +134,7 @@ const HomePage: React.FC = () => {
       const res: Message[] = await fetchAllMessages(token, user);
       if (res && res.length > 0) {
         setCurrentMessages(res);
-        // console.log("teh current messages are", res);
+        console.log("teh current messages are", res);
       }
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -110,6 +150,17 @@ const HomePage: React.FC = () => {
         // Reset unread count when chat is selected
         dispatch(resetUnreadCount(chat.email));
         
+        // Start hybrid chat session when a chat is selected
+        hybridChatService.startChatSession(chat.email, (message) => {
+          console.log("📨 Real-time message received:", message);
+          // Update current messages if from the currently selected chat
+          if (message.from === chat.email) {
+            setCurrentMessages((prevMessages) => {
+              return [...(prevMessages || []), message];
+            });
+          }
+        });
+        
         if (chat.id) {
           // Only fetch messages if there's a chat ID (existing conversation)
           fetchMessages(chat.email);
@@ -119,7 +170,16 @@ const HomePage: React.FC = () => {
         }
       }
     }
-  }, [selectedChatEmail,  dispatch]);
+  }, [selectedChatEmail, dispatch]);
+
+  // End chat session when switching chats or unmounting
+  useEffect(() => {
+    return () => {
+      if (selectedChat) {
+        hybridChatService.endChatSession();
+      }
+    };
+  }, [selectedChat]);
 
   useEffect(() => {
     if (token) {
@@ -143,6 +203,7 @@ const HomePage: React.FC = () => {
       };
 
       setCurrentMessages((prev) => [...prev, messageToSend]);
+      console.log("Message to send:", messageToSend);
       
       // Update Redux chat list with new message
       dispatch(handleNewMessage(messageToSend, userDTO.email));
@@ -151,24 +212,42 @@ const HomePage: React.FC = () => {
       setSelectedFile(null);
     };
 
-    const payload: any = {
-      to: selectedChat.email,
-      from: userDTO.email,
-      content: messageInput || "", // fallback to empty string if file only
-    };
-
-    if (selectedFile) {
-      try {
+    try {
+      if (selectedFile) {
+        // Upload file first, then send message with file URL
         const data = await uploadFile(selectedFile, token);
-        payload.fileUrl = data.url;
-        chatStompService.send("/app/private-message", payload);
+        await hybridChatService.sendMessage(messageInput || "", data.url);
         pushMessageToUI(data.url);
-      } catch (error) {
-        console.error("File upload failed:", error);
+      } else {
+        // Send text message only
+        await hybridChatService.sendMessage(messageInput);
+        pushMessageToUI();
       }
-    } else {
-      chatStompService.send("/app/private-message", payload);
-      pushMessageToUI();
+      
+      console.log("✅ Message sent successfully via hybrid service");
+    } catch (error) {
+      console.error("❌ Failed to send message:", error);
+      
+      // Fallback to old method if hybrid service fails
+      const payload: any = {
+        to: selectedChat.email,
+        from: userDTO.email,
+        content: messageInput || "",
+      };
+
+      if (selectedFile) {
+        try {
+          const data = await uploadFile(selectedFile, token);
+          payload.fileUrl = data.url;
+          chatStompService.send("/app/private-message", payload);
+          pushMessageToUI(data.url);
+        } catch (error) {
+          console.error("File upload failed:", error);
+        }
+      } else {
+        chatStompService.send("/app/private-message", payload);
+        pushMessageToUI();
+      }
     }
   };
 
@@ -391,7 +470,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
-      <ChatDebugger />
+      {/* <ChatDebugger /> */}
     </>
   );
 };

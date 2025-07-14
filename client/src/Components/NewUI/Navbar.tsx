@@ -10,6 +10,7 @@ import {
   rejectContactRequest,
 } from "../../redux/actions/notificationActions";
 import notificationStompService from "../../services/notificationStompService";
+import { logoutUser } from "../../redux/actions/authActions";
 
 const Navbar: React.FC = () => {
   const { userDTO, token } = useAppSelector((state: RootState) => state.auth);
@@ -60,10 +61,10 @@ const Navbar: React.FC = () => {
 
   //handle logout
   const handleLogout = () => {
-    dispatch({ type: "LOGOUT" });
-    localStorage.removeItem("userDTO");
-    localStorage.removeItem("authToken");
-    toast.success("Logged out successfully");
+    dispatch(logoutUser());
+    // localStorage.removeItem("userDTO");
+    // localStorage.removeItem("authToken");
+    // toast.success("Logged out successfully");
   };
 
   // Close notifications when clicking outside
