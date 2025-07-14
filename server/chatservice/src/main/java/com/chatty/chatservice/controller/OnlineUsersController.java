@@ -1,6 +1,6 @@
-package com.rishav.Chatty.controller;
+package com.chatty.chatservice.controller;
 
-import com.rishav.Chatty.services.PresenceEventListener;
+import com.chatty.chatservice.service.OnlineUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,14 +9,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/api/presence")
-public class PresenceController {
+@RequestMapping("/presence")
+public class OnlineUsersController {
+    
     @Autowired
-    private PresenceEventListener presenceEventListener;
+    private OnlineUserService onlineUserService;
 
     @GetMapping("/online")
     public Set<String> getOnlineUsers() {
-        return presenceEventListener.getOnlineUsers();
+        return onlineUserService.getOnlineUsers();
     }
 }
-

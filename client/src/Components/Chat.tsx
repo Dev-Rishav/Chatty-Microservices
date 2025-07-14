@@ -7,13 +7,14 @@ import { Avatar } from '@mui/material';
 import chatBackgroundSvg from '../assets/chatBG2.svg';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import TypingIndicator from './TypingIndicator';
 import { ReceiverObj } from '../interfaces/types';
 import {Message} from '../interfaces/types';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import fetchAllMessages from '../utility/fetchAllMessages';
 import { formatDistanceToNow } from "date-fns";
-import stompService from '../services/stompService';
+import hybridChatService from '../services/hybridChatService';
 import toast from 'react-hot-toast';
 
 
@@ -23,6 +24,8 @@ const Chat: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [showSidebar, setShowSidebar] = useState<boolean>(true);
+    const [isTyping, setIsTyping] = useState<boolean>(false);
+    const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
     const location = useLocation();
     const navigate = useNavigate();
     const fileRef = useRef<HTMLInputElement | null>(null);
@@ -59,79 +62,106 @@ const Chat: React.FC = () => {
         fetchPreviousMessages();
     },[receiverObj.receiverId]);
 
-    // console.log(receiverObj);
+    // Handle typing indicator
+    const handleTyping = (value: string) => {
+        setNewMessage(value);
+        
+        // Send typing indicator
+        if (value.length > 0) {
+            hybridChatService.sendTypingStatus(true);
+            
+            // Clear existing timeout
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+            }
+            
+            // Set new timeout to stop typing indicator
+            const timeout = setTimeout(() => {
+                hybridChatService.sendTypingStatus(false);
+            }, 2000);
+            
+            setTypingTimeout(timeout);
+        } else {
+            hybridChatService.sendTypingStatus(false);
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+                setTypingTimeout(null);
+            }
+        }
+    };
     
     //send message
     const sendMessage = async () => {
         // Implement send message logic here
         if (newMessage.trim() === "" ) return;
-        stompService.send("/app/private-message", {
-            content: newMessage,
-            to: receiverObj.receiverId,
-        });
-        setNewMessage("");
-        setFile(null);
-        const messageToSend: Message = {
-            id: Date.now(), // Temporary ID until the backend sends a real one
-            content: newMessage,
-            from: currentUser.email,
-            to: receiverObj.receiverId,
-            timestamp: new Date().toISOString(),
-          };
-          setMessages((prevMessages) => [...prevMessages,messageToSend]);
-
+        
+        try {
+            await hybridChatService.sendMessage(newMessage);
+            
+            const messageToSend: Message = {
+                id: Date.now(), // Temporary ID until the backend sends a real one
+                content: newMessage,
+                from: currentUser.email,
+                to: receiverObj.receiverId,
+                timestamp: new Date().toISOString(),
+            };
+            setMessages((prevMessages) => [...(prevMessages || []), messageToSend]);
+            setNewMessage("");
+            setFile(null);
+        } catch (error) {
+            console.error("Failed to send message:", error);
+            toast.error("Failed to send message");
+        }
     };
 
     //event listeners for new messages
     useEffect(() => {
-      
-        if (!stompService.isConnected()) {
-          stompService.connect(token, () => {
-            stompService.subscribe("/user/queue/messages", (payload:any) => {
-            console.log("Message received:", payload);
-            if(payload.from === receiverObj.receiverId){ 
-            setMessages((prevMessages) => {
-                const message: Message = {
-                    id: Date.now(), // Temporary ID until the backend sends a real one
-                    content: payload.content,
-                    from: payload.from,
-                    to: payload.to,
-                    timestamp: new Date().toISOString(),
-                };
-                // console.log("Message received:", message);
-                return [...(prevMessages || []), message];
-
-            });
-        }
-            });
-        
-          });
-        } else {
-          stompService.subscribe("/user/queue/messages", (payload:any) => {
-            if(payload.from === receiverObj.receiverId){    //bind it with the current message only if the sender is the current receiver
-            setMessages((prevMessages) => {
-                const message: Message = {
-                    id: Date.now(), // Temporary ID until the backend sends a real one
-                    content: payload.content,
-                    from: payload.from,
-                    to: payload.to,
-                    timestamp: new Date().toISOString(),
-                };
-                console.log("Message received:", message);
-                return [...(prevMessages || []), message];
-
-
-            });     
-        }      
-            // const message = JSON.parse(payload.body);
-            toast.success("💬 Got message:",payload.content);
-          });
-        }
-      
-        return () => {
-          stompService.unsubscribe("/user/queue/messages");
+        // Start active chat session for real-time messaging
+        const startChatSession = async () => {
+            try {
+                await hybridChatService.startChatSession(receiverObj.receiverId, (message: any) => {
+                    console.log("Message received:", message);
+                    
+                    // Handle typing status updates
+                    if (message.senderId && message.receiverId && typeof message.isTyping === 'boolean') {
+                        if (message.senderId === receiverObj.receiverId) {
+                            setIsTyping(message.isTyping);
+                        }
+                        return;
+                    }
+                    
+                    // Handle regular messages
+                    if (message.from === receiverObj.receiverId) { 
+                        setMessages((prevMessages) => {
+                            const newMessage: Message = {
+                                id: Date.now(), // Temporary ID until the backend sends a real one
+                                content: message.content,
+                                from: message.from,
+                                to: message.to,
+                                timestamp: new Date().toISOString(),
+                            };
+                            return [...(prevMessages || []), newMessage];
+                        });
+                        toast.success("💬 New message received");
+                    }
+                });
+            } catch (error) {
+                console.error("Failed to start chat session:", error);
+                toast.error("Failed to connect to chat");
+            }
         };
-      }, []);
+
+        startChatSession();
+
+        // Cleanup: end chat session when component unmounts or receiver changes
+        return () => {
+            hybridChatService.endChatSession();
+            // Clear typing timeout
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+            }
+        };
+    }, [receiverObj.receiverId, token]);
       
 
 
@@ -178,7 +208,7 @@ const Chat: React.FC = () => {
                             {messages.map((msg) => (
                                 <div key={msg.id} className={`flex items-start mb-4 ${msg.from === currentUser?.email ? 'flex-row-reverse' : 'flex-row'}`}>
                                     <Avatar
-                                        src={(msg.from === currentUser?.email ? currentUser?.ProfilePic : receiverObj.receiverProfileImg) || 'default-avatar-url.jpg'}
+                                        src={(msg.from === currentUser?.email ? currentUser?.profilePic : receiverObj.receiverProfileImg) || 'default-avatar-url.jpg'}
                                         alt={msg.from}
                                         className={`w-8 h-8 ${msg.from === currentUser?.email ? 'ml-2' : 'mr-2'}`}
                                     />
@@ -194,6 +224,13 @@ const Chat: React.FC = () => {
                                     </div>
                                 </div>
                             ))}
+                            
+                            {/* Typing Indicator */}
+                            <TypingIndicator 
+                                isTyping={isTyping} 
+                                username={receiverObj.receiverUsername} 
+                            />
+                            
                             <div ref={messagesEndRef} />
                             </>)}
                         </div>
@@ -219,7 +256,7 @@ const Chat: React.FC = () => {
                                 className='flex-1 mx-4 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500' 
                                 placeholder='Type a message...' 
                                 value={newMessage} 
-                                onChange={(e) => setNewMessage(e.target.value)} 
+                                onChange={(e) => handleTyping(e.target.value)} 
                                 onKeyUp={(e) => e.key === 'Enter' && sendMessage()} 
                             />
                             <button 

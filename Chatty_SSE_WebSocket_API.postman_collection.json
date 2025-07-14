@@ -1,0 +1,275 @@
+{
+  "info": {
+    "name": "Chatty SSE + WebSocket API",
+    "description": "Complete API collection for testing SSE and WebSocket features",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:8085"
+    },
+    {
+      "key": "JWT_TOKEN",
+      "value": "your_jwt_token_here"
+    },
+    {
+      "key": "USER1_EMAIL",
+      "value": "user1@example.com"
+    },
+    {
+      "key": "USER2_EMAIL",
+      "value": "user2@example.com"
+    }
+  ],
+  "item": [
+    {
+      "name": "SSE Endpoints",
+      "item": [
+        {
+          "name": "SSE Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/sse/health",
+              "host": ["{{BASE_URL}}"],
+              "path": ["sse", "health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('SSE service is healthy', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Connect to SSE Stream",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              },
+              {
+                "key": "Cache-Control",
+                "value": "no-cache"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/sse/updates?token={{JWT_TOKEN}}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["sse", "updates"],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{JWT_TOKEN}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Active Connections Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/sse/connections/count",
+              "host": ["{{BASE_URL}}"],
+              "path": ["sse", "connections", "count"]
+            }
+          }
+        },
+        {
+          "name": "Get Connected Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/sse/connections/users",
+              "host": ["{{BASE_URL}}"],
+              "path": ["sse", "connections", "users"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Presence Endpoints",
+      "item": [
+        {
+          "name": "Get Online Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/presence/online",
+              "host": ["{{BASE_URL}}"],
+              "path": ["presence", "online"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Testing Endpoints",
+      "item": [
+        {
+          "name": "Test Presence Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\"{{USER1_EMAIL}}\", \"{{USER2_EMAIL}}\"]"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/sse/test/presence",
+              "host": ["{{BASE_URL}}"],
+              "path": ["sse", "test", "presence"]
+            }
+          }
+        },
+        {
+          "name": "Test Message Update",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/sse/test/message?senderId={{USER1_EMAIL}}&receiverId={{USER2_EMAIL}}&content=Hello from Postman!",
+              "host": ["{{BASE_URL}}"],
+              "path": ["sse", "test", "message"],
+              "query": [
+                {
+                  "key": "senderId",
+                  "value": "{{USER1_EMAIL}}"
+                },
+                {
+                  "key": "receiverId",
+                  "value": "{{USER2_EMAIL}}"
+                },
+                {
+                  "key": "content",
+                  "value": "Hello from Postman!"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Test Typing Status - Start",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/sse/test/typing?senderId={{USER1_EMAIL}}&receiverId={{USER2_EMAIL}}&isTyping=true",
+              "host": ["{{BASE_URL}}"],
+              "path": ["sse", "test", "typing"],
+              "query": [
+                {
+                  "key": "senderId",
+                  "value": "{{USER1_EMAIL}}"
+                },
+                {
+                  "key": "receiverId",
+                  "value": "{{USER2_EMAIL}}"
+                },
+                {
+                  "key": "isTyping",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Test Typing Status - Stop",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/sse/test/typing?senderId={{USER1_EMAIL}}&receiverId={{USER2_EMAIL}}&isTyping=false",
+              "host": ["{{BASE_URL}}"],
+              "path": ["sse", "test", "typing"],
+              "query": [
+                {
+                  "key": "senderId",
+                  "value": "{{USER1_EMAIL}}"
+                },
+                {
+                  "key": "receiverId",
+                  "value": "{{USER2_EMAIL}}"
+                },
+                {
+                  "key": "isTyping",
+                  "value": "false"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat Endpoints",
+      "item": [
+        {
+          "name": "Get All Chats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{JWT_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/chat/allChats",
+              "host": ["{{BASE_URL}}"],
+              "path": ["chat", "allChats"]
+            }
+          }
+        },
+        {
+          "name": "Get Messages Between Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{JWT_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/messages/between?user={{USER2_EMAIL}}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["messages", "between"],
+              "query": [
+                {
+                  "key": "user",
+                  "value": "{{USER2_EMAIL}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -71,7 +71,10 @@ public class AuthFilter implements GlobalFilter, Ordered {
     private boolean isPublicRoute(String path) {
         return path.startsWith("/auth/login") ||
                 path.startsWith("/auth/register") ||
-                path.startsWith("/auth/validate");
+                path.startsWith("/auth/validate")
+                || path.startsWith("/sse")||
+                path.startsWith("/presence");
+
     }
 
     @Override

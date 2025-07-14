@@ -4,6 +4,7 @@ import { FaMagnifyingGlass } from "react-icons/fa6";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
+import hybridChatService from "../services/hybridChatService";
 
 // Define types for the userDTO and state
 interface User {
@@ -11,6 +12,7 @@ interface User {
   email: string;
   username: string;
   profile_image?: string;
+  isOnline?: boolean; // Add online status
 }
 
 interface RootState {
@@ -26,12 +28,36 @@ interface RootState {
 const Sidebar: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   
   // Use the proper types from the Redux store
   const { isAuthenticated, userDTO } = useSelector(
     (state: RootState) => state.auth
   );
   const navigate = useNavigate();
+
+  // Listen for presence updates
+  useEffect(() => {
+    const handlePresenceUpdate = (users: string[]) => {
+      setOnlineUsers(new Set(users));
+      
+      // Update users list with online status
+      setUsers(prevUsers => 
+        prevUsers.map(user => ({
+          ...user,
+          isOnline: users.includes(user.email)
+        }))
+      );
+    };
+
+    // Set up presence listener
+    hybridChatService.onPresenceUpdate(handlePresenceUpdate);
+    
+    return () => {
+      // Note: In a full implementation, you'd want to remove the specific listener
+      // For now, this is handled by the service's disconnect method
+    };
+  }, []);
 
   const getUser = async () => {
     const token = localStorage.getItem("authToken");
@@ -97,12 +123,27 @@ const Sidebar: React.FC = () => {
                 <Paper elevation={0} sx={{ border: "2px solid #3d85c6" }}>
                   <List>
                     <ListItem>
-                      <Avatar src={user.profile_image} />
-                      <ListItemText
-                        primary={user.username}
-                        sx={{ marginLeft: "8px" }}
-                        className="block text-sm sm:text-base"
-                      />
+                      <div className="relative">
+                        <Avatar src={user.profile_image} />
+                        {/* Online status indicator */}
+                        <div 
+                          className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
+                            user.isOnline ? 'bg-green-500' : 'bg-gray-400'
+                          }`}
+                          title={user.isOnline ? 'Online' : 'Offline'}
+                        />
+                      </div>
+                      <div className="flex-1 ml-2">
+                        <ListItemText
+                          primary={user.username}
+                          secondary={
+                            <span className={`text-xs ${user.isOnline ? 'text-green-600' : 'text-gray-500'}`}>
+                              {user.isOnline ? 'Online' : 'Offline'}
+                            </span>
+                          }
+                          className="block text-sm sm:text-base"
+                        />
+                      </div>
                     </ListItem>
                   </List>
                 </Paper>

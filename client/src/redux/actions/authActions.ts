@@ -93,11 +93,34 @@ export const registerUser = (credentials: Credentials) => async (dispatch: AppDi
   }
 };
 
-export const logoutUser =() => async(dispatch: AppDispatch) => {
-  await persistor.purge();
+export const logoutUser = () => async (dispatch: AppDispatch) => {
+  console.log("Logout function called!");
+
+  const token = localStorage.getItem('authToken');
+
   stompService.disconnect();
+
+  try {
+    if (token) {
+      const res = await axios.post(
+        "http://localhost:8081/auth/logout",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      toast.success(res.data);
+    }
+  } catch (error) {
+    console.error("Logout failed:", error);
+    toast.error("Logout failed!");
+  }
+
+  await persistor.purge();
   localStorage.removeItem('authToken');
   localStorage.removeItem('userDTO');
   dispatch({ type: LOGOUT });
-  toast.success("You have been logged out.");
 };
+
