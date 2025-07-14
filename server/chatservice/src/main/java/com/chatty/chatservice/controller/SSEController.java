@@ -4,6 +4,7 @@ import com.chatty.chatservice.dto.ChatDTO;
 import com.chatty.chatservice.events.MessageUpdateEvent;
 import com.chatty.chatservice.events.PresenceUpdateEvent;
 import com.chatty.chatservice.events.TypingStatusEvent;
+import com.chatty.chatservice.listener.WebSocketEventListener;
 import com.chatty.chatservice.service.ActiveChatSessionService;
 import com.chatty.chatservice.service.ChatService;
 import com.chatty.chatservice.service.JWTService;
@@ -42,6 +43,9 @@ public class SSEController {
 
     @Autowired
     private ActiveChatSessionService activeChatSessionService;
+
+    @Autowired
+    private WebSocketEventListener webSocketEventListener;
 
     private final ConcurrentHashMap<String, SseEmitter> userEmitters = new ConcurrentHashMap<>();
 
@@ -254,7 +258,10 @@ public class SSEController {
     }
 
     /**
+     * @deprecated - Legacy approach, now superseded by WebSocket connection events
      * Mark chat window as opened (called when user opens a chat)
+     * 
+     * NEW OPTIMIZED APPROACH: WebSocket connection automatically indicates chat window is open
      */
     @PostMapping("/chat/open")
     public ResponseEntity<String> openChatWindow(
@@ -269,11 +276,16 @@ public class SSEController {
         }
 
         activeChatSessionService.openChatSession(userId, chatPartnerId);
-        return ResponseEntity.ok("Chat window opened: " + userId + " <-> " + chatPartnerId);
+        
+        System.out.println("⚠️  LEGACY API USED: /chat/open - Consider using optimized WebSocket approach");
+        return ResponseEntity.ok("Chat window opened: " + userId + " <-> " + chatPartnerId + " (Legacy API)");
     }
 
     /**
+     * @deprecated - Legacy approach, now superseded by WebSocket disconnection events  
      * Mark chat window as closed (called when user closes a chat)
+     * 
+     * NEW OPTIMIZED APPROACH: WebSocket disconnection automatically indicates chat window is closed
      */
     @PostMapping("/chat/close")
     public ResponseEntity<String> closeChatWindow(
@@ -288,7 +300,9 @@ public class SSEController {
         }
 
         activeChatSessionService.closeChatSession(userId, chatPartnerId);
-        return ResponseEntity.ok("Chat window closed: " + userId + " <-> " + chatPartnerId);
+        
+        System.out.println("⚠️  LEGACY API USED: /chat/close - Consider using optimized WebSocket approach");
+        return ResponseEntity.ok("Chat window closed: " + userId + " <-> " + chatPartnerId + " (Legacy API)");
     }
 
     /**
@@ -310,6 +324,33 @@ public class SSEController {
             }
         }
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * OPTIMIZED APPROACH: Get WebSocket-based chat session status 
+     * Shows how the new approach automatically tracks chat sessions via WebSocket connections
+     */
+    @GetMapping("/chat/websocket-status")
+    public ResponseEntity<Map<String, Object>> getWebSocketBasedChatStatus() {
+        Map<String, Object> response = new HashMap<>();
+        
+        // WebSocket connection data
+        response.put("description", "Optimized approach: WebSocket connections indicate chat windows");
+        response.put("activeWebSocketConnections", webSocketEventListener.getActiveWebSocketConnections());
+        response.put("usersWithChatWindowsOpen", webSocketEventListener.getConnectedUsers());
+        
+        // Traditional chat session data (for comparison)
+        response.put("traditionalActiveChatSessions", activeChatSessionService.getActiveChatSessionCount());
+        response.put("traditionalActiveUsers", activeChatSessionService.getAllActiveUsers());
+        
+        // Show the optimization benefit
+        response.put("optimization", Map.of(
+            "approach", "WebSocket connection state = chat window state",
+            "benefit", "Eliminates need for explicit open/close API calls",
+            "mechanism", "Connection events automatically manage chat sessions"
+        ));
+        
         return ResponseEntity.ok(response);
     }
 

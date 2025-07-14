@@ -67,6 +67,10 @@ class HybridChatService {
   /**
    * Start active chat session (connects WebSocket for real-time messaging)
    */
+  /**
+   * Start active chat session (connects WebSocket as indicator of open chat window)
+   * WebSocket connection itself signals to backend that chat window is open
+   */
   startChatSession(receiverId: string, onMessageReceived?: (message: any) => void): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.token) {
@@ -83,19 +87,22 @@ class HybridChatService {
         onMessageReceived
       };
 
-      // Notify backend that chat window is opened
-      this.notifyChatWindowOpened(receiverId).catch(console.error);
+      console.log("💬 Starting chat session with:", receiverId);
+      console.log("🔌 Connecting WebSocket (signals backend: chat window open)");
 
-      // Connect WebSocket for active messaging
+      // Connect WebSocket - this connection itself tells backend chat window is open
       chatStompService.connect(this.token, () => {
+        console.log("✅ WebSocket connected - Backend now knows chat window is open");
+        
         // Subscribe to private messages for this session
         chatStompService.subscribe("/user/queue/messages", (message: any) => {
           if (this.activeChatSession && this.activeChatSession.receiverId === message.from) {
             // Message from the current chat partner
+            console.log("📨 Received WebSocket message from active chat:", message.from);
             this.activeChatSession.onMessageReceived?.(message);
           } else {
-            // Message from someone else - handle via SSE or show notification
-            console.log("📨 Message from other user:", message.from);
+            // Message from someone else - these will be handled via SSE background updates
+            console.log("📨 Background message from:", message.from, "(will be handled via SSE)");
           }
         });
 
@@ -148,18 +155,24 @@ class HybridChatService {
   }
 
   /**
-   * End active chat session (disconnects WebSocket, keeps SSE)
+   * End active chat session (disconnects WebSocket - signals backend chat window closed)
+   * WebSocket disconnection itself tells backend that chat window is closed
    */
   endChatSession() {
     if (this.activeChatSession) {
       console.log("💬 Ending chat session with:", this.activeChatSession.receiverId);
-      this.notifyChatWindowClosed(this.activeChatSession.receiverId).catch(console.error);
+      console.log("🔌 Disconnecting WebSocket (signals backend: chat window closed)");
       this.activeChatSession = null;
     }
 
-    if(chatStompService.isConnected())
-    // Disconnect WebSocket but keep SSE
-    chatStompService.disconnect();
+    // Disconnect WebSocket - this disconnection tells backend chat window is closed
+    if(chatStompService.isConnected()) {
+      console.log("✅ WebSocket disconnected - Backend now knows chat window is closed");
+      chatStompService.disconnect();
+    }
+    
+    // SSE remains connected for background updates
+    console.log("📡 SSE remains connected for background notifications");
   }
 
   /**
@@ -212,51 +225,11 @@ class HybridChatService {
     };
   }
 
-  /**
-   * Notify backend that chat window is opened
-   */
-  private async notifyChatWindowOpened(receiverId: string): Promise<void> {
-    if (!this.token) return;
-    
-    try {
-      const response = await fetch(`http://localhost:8081/sse/chat/open?chatPartnerId=${encodeURIComponent(receiverId)}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        console.log("📱 Notified backend: chat window opened with", receiverId);
-      }
-    } catch (error) {
-      console.error("Failed to notify chat window opened:", error);
-    }
-  }
-
-  /**
-   * Notify backend that chat window is closed
-   */
-  private async notifyChatWindowClosed(receiverId: string): Promise<void> {
-    if (!this.token) return;
-    
-    try {
-      const response = await fetch(`http://localhost:8081/sse/chat/close?chatPartnerId=${encodeURIComponent(receiverId)}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        console.log("📱 Notified backend: chat window closed with", receiverId);
-      }
-    } catch (error) {
-      console.error("Failed to notify chat window closed:", error);
-    }
-  }
+  // =============================================================================
+  // OPTIMIZATION COMPLETE ✅
+  // WebSocket connection/disconnection now automatically manages chat sessions
+  // No need for explicit API calls - backend detects connection state
+  // =============================================================================
 }
 
 export default HybridChatService.getInstance();
