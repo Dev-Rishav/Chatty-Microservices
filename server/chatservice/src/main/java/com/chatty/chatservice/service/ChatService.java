@@ -2,6 +2,7 @@ package com.chatty.chatservice.service;
 
 
 
+
 import com.chatty.chatservice.dto.ChatDTO;
 import com.chatty.chatservice.dto.ChatMessageDTO;
 import com.chatty.chatservice.entity.Chat;
@@ -20,7 +21,7 @@ import com.chatty.protos.auth.TokenResponse;
 import com.chatty.user.grpc.GetUserByEmailRequest;
 import com.chatty.user.grpc.UserResponse;
 import com.chatty.user.grpc.UserServiceGrpc;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -46,14 +47,6 @@ public class ChatService {
     private final ContactServiceGrpc.ContactServiceBlockingStub contactServiceBlockingStub ;
 
 
-//    public ChatService (SimpMessagingTemplate messagingTemplate ,AuthServiceGrpc.AuthServiceBlockingStub authServiceBlockingStub , ChatRepo chatRepo, UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub,MessageRepo messageRepository, NotificationServiceProto notificationServiceProto ) {
-//        this.userServiceBlockingStub = userServiceBlockingStub;
-//        this.authServiceBlockingStub = authServiceBlockingStub;
-//        this.messageRepository = messageRepository;
-//        this.messagingTemplate = messagingTemplate;
-//        this.chatRepo = chatRepo;
-//        this.notificationServiceProto = notificationServiceProto;
-//    }
 
     @Transactional
     public ChatMessageDTO sendPrivateMessage(ChatMessageDTO message, String senderEmail) {
@@ -125,6 +118,7 @@ public class ChatService {
         return chatMessageDTO;
     }
 
+    @Transactional
     public List<ChatDTO> getAllChats(String token) {
         // Step 1: Validate token and get current user
         TokenResponse res = authServiceBlockingStub.validateToken(

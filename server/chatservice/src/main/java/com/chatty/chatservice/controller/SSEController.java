@@ -4,9 +4,10 @@ import com.chatty.chatservice.dto.ChatDTO;
 import com.chatty.chatservice.events.MessageUpdateEvent;
 import com.chatty.chatservice.events.PresenceUpdateEvent;
 import com.chatty.chatservice.events.TypingStatusEvent;
+import com.chatty.chatservice.service.ActiveChatSessionService;
 import com.chatty.chatservice.service.ChatService;
 import com.chatty.chatservice.service.JWTService;
-import com.chatty.chatservice.service.PresenceEventListener;
+import com.chatty.chatservice.service.OnlineUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -24,11 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/sse")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 public class SSEController {
 
     @Autowired
-    private PresenceEventListener presenceEventListener;
+    private OnlineUserService onlineUserService;
 
     @Autowired
     private ChatService chatService;
@@ -38,6 +39,9 @@ public class SSEController {
 
     @Autowired
     private JWTService jWTService;
+
+    @Autowired
+    private ActiveChatSessionService activeChatSessionService;
 
     private final ConcurrentHashMap<String, SseEmitter> userEmitters = new ConcurrentHashMap<>();
 
@@ -50,6 +54,7 @@ public class SSEController {
             @RequestParam(value = "token", required = false) String tokenParam) {
 
         String token = null;
+        System.out.println("token: " + authHeader);
 
         // Try to get token from header first, then from query param
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -105,7 +110,7 @@ public class SSEController {
      */
     private void sendInitialData(SseEmitter emitter, String token) throws IOException {
         // Send online users
-        Set<String> onlineUsers = presenceEventListener.getOnlineUsers();
+        Set<String> onlineUsers = onlineUserService.getOnlineUsers();
         SSEEventData presenceData = new SSEEventData("presence_update", onlineUsers);
         emitter.send(SseEmitter.event()
                 .name("presence_update")
@@ -246,6 +251,66 @@ public class SSEController {
         health.put("connectedUsers", userEmitters.keySet());
         health.put("timestamp", System.currentTimeMillis());
         return ResponseEntity.ok(health);
+    }
+
+    /**
+     * Mark chat window as opened (called when user opens a chat)
+     */
+    @PostMapping("/chat/open")
+    public ResponseEntity<String> openChatWindow(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam String chatPartnerId) {
+
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        String userId = jWTService.extractUsername(token);
+
+        if (userId == null) {
+            return ResponseEntity.badRequest().body("Invalid token");
+        }
+
+        activeChatSessionService.openChatSession(userId, chatPartnerId);
+        return ResponseEntity.ok("Chat window opened: " + userId + " <-> " + chatPartnerId);
+    }
+
+    /**
+     * Mark chat window as closed (called when user closes a chat)
+     */
+    @PostMapping("/chat/close")
+    public ResponseEntity<String> closeChatWindow(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam String chatPartnerId) {
+
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        String userId = jWTService.extractUsername(token);
+
+        if (userId == null) {
+            return ResponseEntity.badRequest().body("Invalid token");
+        }
+
+        activeChatSessionService.closeChatSession(userId, chatPartnerId);
+        return ResponseEntity.ok("Chat window closed: " + userId + " <-> " + chatPartnerId);
+    }
+
+    /**
+     * Get active chat sessions for testing
+     */
+    @GetMapping("/chat/active")
+    public ResponseEntity<Map<String, Object>> getActiveChatSessions(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("activeChatSessionCount", activeChatSessionService.getActiveChatSessionCount());
+        response.put("activeUsers", activeChatSessionService.getAllActiveUsers());
+
+        if (authHeader != null) {
+            String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+            String userId = jWTService.extractUsername(token);
+            if (userId != null) {
+                response.put("userActiveSessions", activeChatSessionService.getActiveChatSessions(userId));
+            }
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     /**
