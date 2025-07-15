@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+
+  eureka-server:
+    image: devrishav23/chatty-eureka:latest
+    container_name: chatty-eureka
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8761
+    ports:
+      - "8761:8761"
+    networks:
+      - chatty-network
+
+  auth-service:
+    image: devrishav23/chatty-auth:latest
+    container_name: chatty-auth
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8082
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - DATABASE_URL=jdbc:postgresql://switchyard.proxy.rlwy.net:12249/railway
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=bQsctPRKZlqDFyoMsgAfLZjCAzSbbzAd
+      - JWT_SECRET=fYekcW1cF7V3tBBr+ehA4BrwhqNCq0S5XSIZ2cPi0kI=
+      - REDIS_HOST=turntable.proxy.rlwy.net
+      - REDIS_USERNAME=default
+      - REDIS_PORT=59809
+      - REDIS_DATABASE=0
+      - REDIS_PASSWORD=SsKfuYbnixfAtWBsdboLzrNHFLAYBBjk
+      - KAFKA_BOOTSTRAP_SERVERS=pkc-l7pr2.ap-south-1.aws.confluent.cloud:9092
+      - KAFKA_API_KEY=6TLWZSSRBWICVADX
+      - KAFKA_API_SECRET=+viMMDB3IRVAw3TWex1Ll7nv5oMw4Si2c3N9f6YauDHr9Qa9IWOPDkN7u7zGK8qU
+      - KAFKA_GROUP_ID=chatty-kafka 
+    ports:
+      - "8082:8082"
+      - "9092:9092"
+    depends_on:
+      - eureka-server
+    networks:
+      - chatty-network
+
+  user-service:
+    image: devrishav23/chatty-user:latest
+    container_name: chatty-user
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8084
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - DATABASE_URL=jdbc:postgresql://switchyard.proxy.rlwy.net:12249/railway
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=bQsctPRKZlqDFyoMsgAfLZjCAzSbbzAd
+      - JWT_SECRET=fYekcW1cF7V3tBBr+ehA4BrwhqNCq0S5XSIZ2cPi0kI=
+      - REDIS_HOST=turntable.proxy.rlwy.net
+      - REDIS_USERNAME=default
+      - REDIS_PORT=59809
+      - REDIS_DATABASE=0
+      - REDIS_PASSWORD=SsKfuYbnixfAtWBsdboLzrNHFLAYBBjk
+      - KAFKA_BOOTSTRAP_SERVERS=pkc-l7pr2.ap-south-1.aws.confluent.cloud:9092
+      - KAFKA_API_KEY=6TLWZSSRBWICVADX
+      - KAFKA_API_SECRET=+viMMDB3IRVAw3TWex1Ll7nv5oMw4Si2c3N9f6YauDHr9Qa9IWOPDkN7u7zGK8qU
+      - KAFKA_GROUP_ID=chatty-kafka 
+    ports:
+      - "8084:8084"
+      - "9094:9094"
+    depends_on:
+      - eureka-server
+    networks:
+      - chatty-network
+
+  chat-service:
+    image: devrishav23/chatty-chat:latest
+    container_name: chatty-chat
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8085
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - DATABASE_URL=jdbc:postgresql://switchyard.proxy.rlwy.net:12249/railway
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=bQsctPRKZlqDFyoMsgAfLZjCAzSbbzAd
+      - JWT_SECRET=fYekcW1cF7V3tBBr+ehA4BrwhqNCq0S5XSIZ2cPi0kI=
+      - REDIS_HOST=turntable.proxy.rlwy.net
+      - REDIS_USERNAME=default
+      - REDIS_PORT=59809
+      - REDIS_DATABASE=0
+      - REDIS_PASSWORD=SsKfuYbnixfAtWBsdboLzrNHFLAYBBjk
+      - KAFKA_BOOTSTRAP_SERVERS=pkc-l7pr2.ap-south-1.aws.confluent.cloud:9092
+      - KAFKA_API_KEY=6TLWZSSRBWICVADX
+      - KAFKA_API_SECRET=+viMMDB3IRVAw3TWex1Ll7nv5oMw4Si2c3N9f6YauDHr9Qa9IWOPDkN7u7zGK8qU
+      - KAFKA_GROUP_ID=chatty-kafka
+      - CLOUDINARY_CLOUD_NAME=djkuu00yc
+      - CLOUDINARY_API_KEY=982317337939277
+      - CLOUDINARY_API_SECRET=S_BXKUTeFUZaXQYnx8nDD0EIVbY
+      - GRPC_USER_SERVICE_ADDRESS=user-service:9094
+      - GRPC_AUTH_SERVICE_ADDRESS=auth-service:9092
+      - GRPC_CONTACT_SERVICE_ADDRESS=contact-service:9096
+    ports:
+      - "8085:8085"
+    depends_on:
+      - eureka-server
+    networks:
+      - chatty-network
+
+  notification-service:
+    image: devrishav23/chatty-notification:latest
+    container_name: chatty-notification
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8086
+      - GRPC_PORT=9096
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - DATABASE_URL=jdbc:postgresql://switchyard.proxy.rlwy.net:12249/railway
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=bQsctPRKZlqDFyoMsgAfLZjCAzSbbzAd
+      - JWT_SECRET=fYekcW1cF7V3tBBr+ehA4BrwhqNCq0S5XSIZ2cPi0kI=
+      - GRPC_USER_SERVICE_ADDRESS=user-service:9094
+      - GRPC_AUTH_SERVICE_ADDRESS=auth-service:9092
+    ports:
+      - "8086:8086"
+      - "9096:9096"
+    depends_on:
+      - eureka-server
+    networks:
+      chatty-network:
+        aliases:
+          - contact-service
+
+  api-gateway:
+    image: devrishav23/chatty-gateway:latest
+    container_name: chatty-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8081
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+    networks:
+      - chatty-network
+
+networks:
+  chatty-network:
+    driver: bridge

@@ -20,6 +20,7 @@
     "axios": "^1.8.2",
     "caniuse-lite": "^1.0.30001702",
     "date-fns": "^3.6.0",
+    "dayjs": "^1.11.13",
     "firebase": "^10.12.3",
     "framer-motion": "^12.9.2",
     "heroicons": "^2.2.0",

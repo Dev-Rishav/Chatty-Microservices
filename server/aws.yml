@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+
+  eureka-server:
+    image: devrishav23/chatty-eureka:latest
+    container_name: chatty-eureka
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8761
+    ports:
+      - "8761:8761"
+    networks:
+      - chatty-network
+
+  auth-service:
+    image: devrishav23/chatty-auth:latest
+    container_name: chatty-auth
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8082
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      # ... other env variables
+    ports:
+      - "8082:8082"
+      - "9092:9092"
+    depends_on:
+      - eureka-server
+    networks:
+      - chatty-network
+
+  user-service:
+    image: devrishav23/chatty-user:latest
+    container_name: chatty-user
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8084
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      # ... other env variables
+    ports:
+      - "8084:8084"
+      - "9094:9094"
+    depends_on:
+      - eureka-server
+    networks:
+      - chatty-network
+
+  chat-service:
+    image: devrishav23/chatty-chat:latest
+    container_name: chatty-chat
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8085
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      # ... other env variables
+    ports:
+      - "8085:8085"
+    depends_on:
+      - eureka-server
+    networks:
+      - chatty-network
+
+  notification-service:
+    image: devrishav23/chatty-notification:latest
+    container_name: chatty-notification
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8086
+      - GRPC_PORT=9096
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      # ... other env variables
+    ports:
+      - "8086:8086"
+      - "9096:9096"
+    depends_on:
+      - eureka-server
+    networks:
+      chatty-network:
+        aliases:
+          - contact-service
+
+  api-gateway:
+    image: devrishav23/chatty-gateway:latest
+    container_name: chatty-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - PORT=8081
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      # ... other env variables
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+    networks:
+      - chatty-network
+
+networks:
+  chatty-network:
+    driver: bridge
