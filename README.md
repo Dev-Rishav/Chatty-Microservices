@@ -5,8 +5,11 @@
   <img src="https://img.shields.io/badge/React-18.3.1-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React">
   <img src="https://img.shields.io/badge/TypeScript-5.8.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Apache_Kafka-231F20?style=for-the-badge&logo=apache-kafka&logoColor=white" alt="Apache Kafka">
+  <img src="https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white" alt="Nginx">
   <img src="https://img.shields.io/badge/gRPC-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="gRPC">
   <img src="https://img.shields.io/badge/WebSocket-010101?style=for-the-badge&logo=websocket&logoColor=white" alt="WebSocket">
+  <img src="https://img.shields.io/badge/SSE-FF6B6B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K" alt="Server-Sent Events">
 </div>
 
 <div align="center">
@@ -23,6 +26,10 @@
 - [Features](#-features)
 - [Architecture](#-architecture)
 - [Technology Stack](#-technology-stack)
+- [Apache Kafka Integration](#-apache-kafka-integration)
+- [Nginx Configuration](#-nginx-configuration)
+- [Server-Sent Events (SSE)](#-server-sent-events-sse)
+- [Redis Integration](#-redis-integration)
 - [Microservices](#-microservices)
 - [Getting Started](#-getting-started)
 - [API Documentation](#-api-documentation)
@@ -72,7 +79,16 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                          CLIENT LAYER                          │
 ├─────────────────────────────────────────────────────────────────┤
-│  React + TypeScript + Redux + WebSocket + Tailwind CSS        │
+│  React + TypeScript + Redux + WebSocket + SSE + Tailwind CSS  │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+┌─────────────────────────┴───────────────────────────────────────┐
+│                       REVERSE PROXY                            │
+├─────────────────────────────────────────────────────────────────┤
+│  Nginx (Port 80/443)                                          │
+│  • SSL termination & Load balancing                           │
+│  • Static file serving & Compression                          │
+│  • Request routing & Security headers                         │
 └─────────────────────────┬───────────────────────────────────────┘
                           │
 ┌─────────────────────────┴───────────────────────────────────────┐
@@ -81,6 +97,7 @@
 │  Spring Cloud Gateway (Port 8081)                             │
 │  • Request routing & Load balancing                           │
 │  • CORS handling & Rate limiting                              │
+│  • SSE endpoint management                                    │
 └─────────────────────────┬───────────────────────────────────────┘
                           │
 ┌─────────────────────────┴───────────────────────────────────────┐
@@ -89,23 +106,33 @@
 │  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │
 │  │   AuthService   │ │   UserService   │ │   ChatService   │   │
 │  │   (Port 8082)   │ │   (Port 8084)   │ │   (Port 8085)   │   │
-│  │   gRPC: 9092    │ │   gRPC: 9094    │ │                 │   │
+│  │   gRPC: 9092    │ │   gRPC: 9094    │ │   SSE Support   │   │
 │  └─────────────────┘ └─────────────────┘ └─────────────────┘   │
 │                                                                 │
 │  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │
 │  │NotificationSvc  │ │ PaymentService  │ │ EurekaServer    │   │
 │  │   (Port 8086)   │ │   (Port 8087)   │ │   (Port 8761)   │   │
 │  │   gRPC: 9096    │ │                 │ │                 │   │
+│  │   SSE Support   │ │                 │ │                 │   │
 │  └─────────────────┘ └─────────────────┘ └─────────────────┘   │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+┌─────────────────────────┴───────────────────────────────────────┐
+│                    MESSAGE STREAMING                           │
+├─────────────────────────────────────────────────────────────────┤
+│  Apache Kafka (Port 9092)                                     │
+│  • Event streaming & Message queuing                          │
+│  • Real-time data processing                                  │
+│  • Microservice communication                                 │
 └─────────────────────────┬───────────────────────────────────────┘
                           │
 ┌─────────────────────────┴───────────────────────────────────────┐
 │                      DATA LAYER                                │
 ├─────────────────────────────────────────────────────────────────┤
-│  PostgreSQL Database (Port 5432)                              │
-│  • User data & authentication                                 │
-│  • Chat messages & conversations                              │
-│  • Contact relationships                                      │
+│  PostgreSQL Database (Port 5432)     Redis Cache (Port 6379)  │
+│  • User data & authentication        • Session management     │
+│  • Chat messages & conversations     • Real-time caching      │
+│  • Contact relationships             • Pub/sub messaging      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -117,7 +144,8 @@
 - **Redux Toolkit** - State management with RTK Query
 - **Tailwind CSS** - Utility-first CSS framework
 - **Framer Motion** - Animation library for React
-- **WebSocket + STOMP** - Real-time communication
+- **WebSocket + STOMP** - Real-time bi-directional communication
+- **Server-Sent Events (SSE)** - Real-time server-to-client streaming
 - **Vite** - Fast build tool and development server
 
 ### **Backend**
@@ -127,18 +155,27 @@
 - **Spring Data JPA** - Database abstraction layer
 - **gRPC** - High-performance RPC framework
 - **WebSocket + STOMP** - Real-time messaging
+- **Server-Sent Events (SSE)** - Real-time event streaming
 - **Eureka** - Service discovery and registration
+
+### **Message Streaming & Event Processing**
+- **Apache Kafka** - Distributed event streaming platform
+- **Kafka Connect** - Data integration framework
+- **Kafka Streams** - Stream processing library
+- **Schema Registry** - Schema management and evolution
+
+### **Infrastructure & Deployment**
+- **Nginx** - Reverse proxy and load balancer
+- **Docker** - Containerization
+- **Docker Compose** - Multi-container orchestration
+- **Maven** - Build automation and dependency management
+- **Vercel** - Frontend deployment
+- **CI/CD** - Automated testing and deployment
 
 ### **Database & Storage**
 - **PostgreSQL** - Primary relational database
 - **Redis** - Session storage, caching, and pub/sub messaging
 - **File Storage** - Media and file uploads
-
-### **DevOps & Deployment**
-- **Docker** - Containerization
-- **Maven** - Build automation and dependency management
-- **Vercel** - Frontend deployment
-- **CI/CD** - Automated testing and deployment
 
 ## 🗃️ Redis Integration
 
@@ -171,6 +208,221 @@ spring.redis.lettuce.pool.min-idle=0
 - **Scalability**: Distributed caching across multiple service instances
 - **Reliability**: Session persistence across service restarts
 - **Real-time**: Fast pub/sub messaging for live features
+
+## 🚀 Apache Kafka Integration
+
+Apache Kafka serves as the backbone for event-driven architecture and real-time data streaming in the Chatty platform:
+
+### **Primary Use Cases**
+- **Event Streaming**: Real-time message delivery and event propagation
+- **Microservice Communication**: Asynchronous service-to-service messaging
+- **Data Processing**: Stream processing for analytics and monitoring
+- **Event Sourcing**: Audit trails and event history tracking
+
+### **Topics and Partitions**
+- **chat-messages**: Real-time chat message streaming
+- **user-events**: User activity and presence updates
+- **notifications**: Push notification delivery
+- **system-events**: System-wide event logging and monitoring
+
+### **Producer Services**
+- **ChatService**: Publishes chat messages and conversation events
+- **UserService**: Publishes user activity and profile updates
+- **NotificationService**: Publishes notification events
+- **AuthService**: Publishes authentication and security events
+
+### **Consumer Services**
+- **NotificationService**: Consumes events to trigger notifications
+- **ChatService**: Consumes events for message ordering and delivery
+- **Analytics Service**: Consumes events for real-time analytics
+- **Audit Service**: Consumes events for compliance and logging
+
+### **Configuration**
+```properties
+# Kafka Configuration
+spring.kafka.bootstrap-servers=localhost:9092
+spring.kafka.consumer.group-id=chatty-service-group
+spring.kafka.consumer.auto-offset-reset=earliest
+spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.consumer.value-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer=org.apache.kafka.common.serialization.StringSerializer
+```
+
+### **Benefits**
+- **Scalability**: Horizontal scaling with partitioned topics
+- **Reliability**: Message durability and fault tolerance
+- **Performance**: High-throughput, low-latency message processing
+- **Decoupling**: Loose coupling between microservices
+
+## 🌐 Nginx Configuration
+
+Nginx acts as a reverse proxy, load balancer, and SSL terminator for the Chatty platform:
+
+### **Primary Functions**
+- **SSL Termination**: HTTPS encryption and certificate management
+- **Load Balancing**: Traffic distribution across multiple service instances
+- **Static File Serving**: Efficient serving of frontend assets
+- **Request Routing**: Path-based routing to appropriate services
+- **Security Headers**: Implementation of security best practices
+
+### **Configuration Features**
+- **Gzip Compression**: Reduces bandwidth usage and improves performance
+- **Rate Limiting**: Prevents abuse and ensures fair resource usage
+- **Caching**: Static content caching for improved response times
+- **WebSocket Proxying**: Support for real-time WebSocket connections
+- **SSE Support**: Server-Sent Events proxying for real-time updates
+
+### **Sample Configuration**
+```nginx
+server {
+    listen 80;
+    listen 443 ssl http2;
+    server_name api.chatty.com;
+    
+    # SSL Configuration
+    ssl_certificate /etc/nginx/ssl/chatty.crt;
+    ssl_certificate_key /etc/nginx/ssl/chatty.key;
+    
+    # Gzip Configuration
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain application/json application/javascript text/css;
+    
+    # API Gateway Proxy
+    location /api/ {
+        proxy_pass http://api-gateway:8081/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    
+    # WebSocket Proxy
+    location /ws/ {
+        proxy_pass http://api-gateway:8081/ws/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+    
+    # SSE Proxy
+    location /sse/ {
+        proxy_pass http://api-gateway:8081/sse/;
+        proxy_set_header Cache-Control no-cache;
+        proxy_set_header Connection '';
+        proxy_http_version 1.1;
+        chunked_transfer_encoding off;
+        proxy_buffering off;
+        proxy_cache off;
+    }
+}
+```
+
+### **Benefits**
+- **Performance**: Efficient static file serving and caching
+- **Security**: SSL termination and security header management
+- **Scalability**: Load balancing and connection pooling
+- **Reliability**: Health checks and failover support
+
+## 📡 Server-Sent Events (SSE)
+
+Server-Sent Events provide real-time, unidirectional communication from server to client:
+
+### **Use Cases**
+- **Live Notifications**: Real-time push notifications without polling
+- **Chat Updates**: Live message delivery and typing indicators
+- **User Presence**: Real-time online/offline status updates
+- **System Alerts**: Server-side event notifications to clients
+
+### **Implementation**
+- **Spring Boot SSE**: Built-in SSE support with SseEmitter
+- **Event Streaming**: Continuous event stream to connected clients
+- **Auto-Reconnection**: Client-side automatic reconnection handling
+- **Event Filtering**: Selective event delivery based on user context
+
+### **Backend Implementation**
+```java
+@RestController
+public class SSEController {
+    
+    @GetMapping(value = "/sse/notifications", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribeToNotifications(@RequestParam String userId) {
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        
+        // Register emitter for user
+        sseService.addEmitter(userId, emitter);
+        
+        // Handle connection cleanup
+        emitter.onCompletion(() -> sseService.removeEmitter(userId, emitter));
+        emitter.onTimeout(() -> sseService.removeEmitter(userId, emitter));
+        
+        return emitter;
+    }
+    
+    @Service
+    public class SSEService {
+        private final Map<String, List<SseEmitter>> userEmitters = new ConcurrentHashMap<>();
+        
+        public void sendNotification(String userId, Object data) {
+            List<SseEmitter> emitters = userEmitters.get(userId);
+            if (emitters != null) {
+                emitters.forEach(emitter -> {
+                    try {
+                        emitter.send(SseEmitter.event()
+                            .name("notification")
+                            .data(data)
+                            .id(UUID.randomUUID().toString()));
+                    } catch (Exception e) {
+                        emitter.completeWithError(e);
+                    }
+                });
+            }
+        }
+    }
+}
+```
+
+### **Frontend Implementation**
+```typescript
+// SSE Client Service
+export class SSEService {
+    private eventSource: EventSource | null = null;
+    
+    connect(userId: string) {
+        this.eventSource = new EventSource(`/sse/notifications?userId=${userId}`);
+        
+        this.eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.handleNotification(data);
+        };
+        
+        this.eventSource.onerror = (error) => {
+            console.error('SSE connection error:', error);
+            this.reconnect(userId);
+        };
+    }
+    
+    private reconnect(userId: string) {
+        setTimeout(() => {
+            this.connect(userId);
+        }, 5000);
+    }
+    
+    private handleNotification(data: any) {
+        // Dispatch to Redux store or handle notification
+        store.dispatch(addNotification(data));
+    }
+}
+```
+
+### **Benefits**
+- **Real-time**: Instant server-to-client communication
+- **Efficiency**: Lower overhead compared to polling
+- **Simplicity**: Built-in browser support and automatic reconnection
+- **Scalability**: Efficient handling of many concurrent connections
 
 ## 🔧 Microservices
 
@@ -307,25 +559,58 @@ spring.redis.lettuce.pool.min-idle=0
    npm run build
    ```
 
-### **Docker Setup (Optional)**
+### **Docker Setup (Recommended)**
 
 ```bash
-# Build and run all services with Redis
+# Build and run all services with full stack
 docker-compose up -d
 
 # Or build specific services
-docker-compose up -d postgres redis eureka-server api-gateway
+docker-compose up -d postgres redis kafka zookeeper nginx eureka-server api-gateway
 
-# Check Redis container status
-docker-compose ps redis
+# Check service status
+docker-compose ps
+
+# View logs for specific service
+docker-compose logs -f kafka
+docker-compose logs -f nginx
 ```
 
 **Docker Compose Services:**
-- PostgreSQL (Port 5432)
-- Redis (Port 6379)
-- Eureka Server (Port 8761)
-- API Gateway (Port 8081)
-- All microservices with their respective ports
+- **Nginx** (Port 80/443) - Reverse proxy and load balancer
+- **PostgreSQL** (Port 5432) - Primary database
+- **Redis** (Port 6379) - Caching and session management
+- **Apache Kafka** (Port 9092) - Event streaming platform
+- **Zookeeper** (Port 2181) - Kafka coordination service
+- **Eureka Server** (Port 8761) - Service discovery
+- **API Gateway** (Port 8081) - Request routing and management
+- **All microservices** - Each with their respective ports
+
+### **Kafka Setup**
+```bash
+# Create Kafka topics
+docker-compose exec kafka kafka-topics --create --topic chat-messages --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+docker-compose exec kafka kafka-topics --create --topic user-events --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+docker-compose exec kafka kafka-topics --create --topic notifications --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+
+# List all topics
+docker-compose exec kafka kafka-topics --list --bootstrap-server localhost:9092
+
+# Monitor topic messages
+docker-compose exec kafka kafka-console-consumer --topic chat-messages --bootstrap-server localhost:9092
+```
+
+### **Nginx Configuration**
+```bash
+# Reload Nginx configuration
+docker-compose exec nginx nginx -s reload
+
+# Test Nginx configuration
+docker-compose exec nginx nginx -t
+
+# View Nginx access logs
+docker-compose logs -f nginx
+```
 
 ## 📚 API Documentation
 
@@ -393,6 +678,18 @@ service ContactService {
 - **Presence Updates**: `/topic/presence`
 - **Typing Indicators**: `/topic/typing`
 
+### **Server-Sent Events (SSE)**
+- **Live Notifications**: `/sse/notifications`
+- **System Alerts**: `/sse/system-events`
+- **User Presence**: `/sse/presence`
+- **Chat Updates**: `/sse/chat-updates`
+
+### **Kafka Event Streaming**
+- **Message Events**: Real-time message delivery via Kafka streams
+- **User Activity**: Activity tracking and presence updates
+- **System Events**: Distributed event processing
+- **Analytics**: Real-time analytics and monitoring
+
 ### **STOMP Messaging**
 ```javascript
 // Send private message
@@ -409,11 +706,50 @@ stompClient.subscribe("/user/queue/notifications", (message) => {
 });
 ```
 
+### **SSE Implementation**
+```javascript
+// Connect to SSE endpoint
+const eventSource = new EventSource('/sse/notifications');
+
+eventSource.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  dispatch(addNotification(data));
+};
+
+eventSource.addEventListener('user-presence', (event) => {
+  const presence = JSON.parse(event.data);
+  dispatch(updateUserPresence(presence));
+});
+```
+
+### **Kafka Integration**
+```javascript
+// Kafka producer example
+@Component
+public class MessageProducer {
+    
+    @Autowired
+    private KafkaTemplate<String, Object> kafkaTemplate;
+    
+    public void sendMessage(String topic, Object message) {
+        kafkaTemplate.send(topic, message);
+    }
+}
+
+// Kafka consumer example
+@KafkaListener(topics = "chat-messages")
+public void handleChatMessage(String message) {
+    // Process incoming chat message
+    ChatMessage chatMessage = objectMapper.readValue(message, ChatMessage.class);
+    messageService.processMessage(chatMessage);
+}
+```
+
 ### **Redux Integration**
-- Real-time state updates
-- Optimistic UI updates
-- Persistent state management
-- Offline support
+- Real-time state updates via WebSocket and SSE
+- Optimistic UI updates with rollback support
+- Persistent state management with Redux Toolkit
+- Offline support with queue synchronization
 
 ## 🔒 Security
 
