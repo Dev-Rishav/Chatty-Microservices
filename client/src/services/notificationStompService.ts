@@ -1,6 +1,7 @@
 import * as Stomp from "stompjs";
 import SockJS from "sockjs-client";
 import { ContactRequestDTO } from "../interfaces/types";
+import { buildWebSocketUrl } from "../config/api";
 
 class NotificationStompService {
   private static instance: NotificationStompService;
@@ -28,7 +29,7 @@ class NotificationStompService {
       return;
     }
 
-    const socket = new SockJS(`http://localhost:8086/ws?token=${token}`);
+    const socket = new SockJS(buildWebSocketUrl('notification', token));
     this.stompClient = Stomp.over(socket);
     this.stompClient.debug = () => {}; // Disable logs
 

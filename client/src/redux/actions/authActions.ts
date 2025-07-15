@@ -13,6 +13,7 @@ import { AppDispatch, persistor } from '../store';
 import { setInitialOnlineUsers, updateUserPresence } from './presenceActions';
 import stompService from '../../services/stompService';
 import {UserDTO} from '../../interfaces/types'
+import { buildApiUrl, API_CONFIG } from '../../config/api';
 
 interface Credentials {
   email: string;
@@ -28,7 +29,7 @@ interface LoginResponse {
 export const loginUser = (credentials: Credentials) => async (dispatch: AppDispatch) => {
   dispatch({ type: LOGIN_REQUEST });
   try {
-    const response = await axios.post<LoginResponse>('http://localhost:8081/auth/login', credentials);
+    const response = await axios.post<LoginResponse>(buildApiUrl(API_CONFIG.ENDPOINTS.AUTH.LOGIN), credentials);
     const { userDTO, token } = response.data;
 
     toast.success(`Welcome back, ${userDTO.username}!`);
@@ -41,7 +42,7 @@ export const loginUser = (credentials: Credentials) => async (dispatch: AppDispa
     });
 
     const res = await axios.get<string[]>(
-      'http://localhost:8081/presence/online',
+      buildApiUrl(API_CONFIG.ENDPOINTS.PRESENCE.ONLINE),
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -69,7 +70,7 @@ export const loginUser = (credentials: Credentials) => async (dispatch: AppDispa
 export const registerUser = (credentials: Credentials) => async (dispatch: AppDispatch) => {
   dispatch({ type: SIGNUP_REQUEST });
   try {
-    const res=await axios.post('http://localhost:8081/auth/register', credentials);
+    const res=await axios.post(buildApiUrl(API_CONFIG.ENDPOINTS.AUTH.REGISTER), credentials);
 
     if(res.data?.status === "error"){
       toast.error(res.data.message)
@@ -103,7 +104,7 @@ export const logoutUser = () => async (dispatch: AppDispatch) => {
   try {
     if (token) {
       const res = await axios.post(
-        "http://localhost:8081/auth/logout",
+        buildApiUrl(API_CONFIG.ENDPOINTS.AUTH.LOGOUT),
         {},
         {
           headers: {

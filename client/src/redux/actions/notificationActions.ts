@@ -2,6 +2,7 @@ import axios from "axios";
 import { Notification } from "../../interfaces/types";
 import { ADD_NOTIFICATION, CLEAR_NOTIFICATIONS,MARK_AS_READ,SET_NOTIFICATIONS, REMOVE_NOTIFICATION, UPDATE_NOTIFICATION } from "./notificationActionTypes";
 import notificationStompService from "../../services/notificationStompService";
+import { buildApiUrl, API_CONFIG } from '../../config/api';
 
 
 // Action Creators
@@ -65,7 +66,7 @@ export const fetchNotificationHistory = () => {
   return async (dispatch: any, getState: any) => {
     try {
       const token = getState().auth.token; 
-      const response = await axios.get("http://localhost:8081/notf/notifications", {
+      const response = await axios.get(buildApiUrl(API_CONFIG.ENDPOINTS.NOTIFICATION.ALL), {
         headers: {
           Authorization: `Bearer ${token}`,
         },

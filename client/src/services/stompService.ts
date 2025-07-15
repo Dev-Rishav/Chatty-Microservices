@@ -2,6 +2,7 @@
 import * as Stomp from "stompjs";
 import SockJS from "sockjs-client";
 import { ContactRequestDTO } from "../interfaces/types";
+import { buildWebSocketUrl } from "../config/api";
 
 class StompService {
   private static instance: StompService;
@@ -31,7 +32,7 @@ class StompService {
     }
 
 
-    const socket = new SockJS(`http://localhost:8085/ws?token=${token}`);
+    const socket = new SockJS(buildWebSocketUrl('chat', token));
     this.stompClient = Stomp.over(socket);
     this.stompClient.debug = () => {}; //disable logs
 

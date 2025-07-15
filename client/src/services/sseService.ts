@@ -1,4 +1,6 @@
 // SSE Service for real-time updates (presence, last messages)
+import { buildApiUrl, API_CONFIG } from '../config/api';
+
 class SSEService {
   private static instance: SSEService;
   private eventSource: EventSource | null = null;
@@ -17,7 +19,7 @@ class SSEService {
   }
 
 async health(token: string) {
-    const res = await fetch("http://localhost:8081/sse/health", {
+    const res = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.SSE.HEALTH), {
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -37,7 +39,7 @@ async health(token: string) {
       return;
     }
 
-    const url = `http://localhost:8081/sse/updates`;
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.SSE.UPDATES);
     
     this.eventSource = new EventSource(url, {
       withCredentials: false,

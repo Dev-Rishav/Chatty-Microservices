@@ -1,5 +1,6 @@
 import * as Stomp from "stompjs";
 import SockJS from "sockjs-client";
+import { buildWebSocketUrl } from "../config/api";
 
 class ChatStompService {
   private static instance: ChatStompService;
@@ -27,7 +28,7 @@ class ChatStompService {
       return;
     }
 
-    const socket = new SockJS(`http://localhost:8085/ws?token=${token}`);
+    const socket = new SockJS(buildWebSocketUrl('chat', token));
     this.stompClient = Stomp.over(socket);
     this.stompClient.debug = () => {}; // disable debug logs
 
