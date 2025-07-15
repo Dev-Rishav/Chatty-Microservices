@@ -1,5 +1,6 @@
 import sseService from './sseService';
 import chatStompService from './chatStompService';
+import { buildApiUrl, API_CONFIG } from '../config/api';
 
 export interface ChatSession {
   isActive: boolean;
@@ -31,7 +32,7 @@ class HybridChatService {
     // sseService.health(token);
     
     // Start SSE for background updates (presence, last messages)
-    const url = `http://localhost:8081/sse/updates`;
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.SSE.UPDATES);
     sseService.connectWithHeaders(url,token);
     
     console.log("🚀 Hybrid Chat Service initialized");

@@ -1,9 +1,11 @@
+import { buildApiUrl, API_CONFIG } from '../config/api';
+
 const uploadFile = async (file: File, token: string) => {
   try {
     const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch("http://localhost:8081/files/upload", {
+  const res = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.FILE.UPLOAD), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`, // Include the auth token in the headers

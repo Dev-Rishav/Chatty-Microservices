@@ -11,6 +11,7 @@ import {
   INCREMENT_UNREAD_COUNT,
   RESET_UNREAD_COUNT
 } from "./chatActionTypes";
+import { buildApiUrl, API_CONFIG } from '../../config/api';
 
 // Action Creators
 export const setChats = (chats: Chat[]) => ({
@@ -64,7 +65,7 @@ export const fetchAllChats = (token: string) => {
       dispatch(setChatsLoading(true));
       dispatch(setChatsError(null));
       
-      const apiUrl = `http://localhost:8081/chat/allChats`;
+      const apiUrl = buildApiUrl(API_CONFIG.ENDPOINTS.CHAT.ALL_CHATS);
       const response = await axios.get(apiUrl, {
         headers: {
           Authorization: `Bearer ${token}`,

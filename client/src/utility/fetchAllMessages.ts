@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { RootState } from "../redux/store";
+import { buildApiUrl, API_CONFIG } from '../config/api';
 
 /**
  * Fetch all messages from the API.
@@ -10,7 +11,7 @@ import { RootState } from "../redux/store";
  */
 const fetchAllMessages = async ( token:string ,user: string) => {
   try {
-    const apiUrl:string = `http://localhost:8081/messages/between?user=${user}`
+    const apiUrl:string = `${buildApiUrl(API_CONFIG.ENDPOINTS.CHAT.MESSAGES)}?user=${user}`
     const response = await axios.get(apiUrl, {
       headers: {
         Authorization: `Bearer ${token}`, // Include the token in the Authorization header
