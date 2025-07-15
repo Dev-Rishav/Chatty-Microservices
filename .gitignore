@@ -37,3 +37,11 @@ server/PaymentService/src/main/resources/application.properties
 server/APIGateway/src/main/resources/application.properties
 server/AuthService/src/main/resources/application.properties
 server/EurekaServer/src/main/resources/application.properties
+server/AuthService/src/main/resources/application-docker.properties
+server/AuthService/src/main/resources/application-docker.properties
+server/chatservice/src/main/resources/application-prod.properties
+.gitignore
+server/userservice/src/main/resources/application-docker.properties
+server/userservice/src/main/resources/application-prod.properties
+server/AuthService/src/main/resources/application-docker.properties
+server/docker-compose.local.yml
