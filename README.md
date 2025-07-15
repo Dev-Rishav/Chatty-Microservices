@@ -19,7 +19,7 @@
 
 ## 🌟 Live Demo
 
-**🎯 [chatty-theta-five.vercel.app](https://chatty-theta-five.vercel.app)**
+**🎯 [chatty-microservices.vercel.app](https://chatty-microservices.vercel.app)**
 
 ## 📖 Table of Contents
 
